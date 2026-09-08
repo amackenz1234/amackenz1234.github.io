@@ -4,28 +4,26 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Electro Cycles · Ontario</title>
-  <meta name="description" content="Electric bikes, scooters, and gear in Ontario. Call 905-308-5392." />
   <meta name="theme-color" content="#0c0c0e" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icon.svg" />
   <style>
     :root { --red:#c1121f; --ink:#0c0c0e; --panel:#16161a; --line:#2a2a30; --paper:#f4f1ea; --muted:#b7b2a8; --safe:env(safe-area-inset-bottom,12px); }
     * { box-sizing:border-box; margin:0; padding:0; }
-    body { background:var(--ink); color:var(--paper); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; padding-bottom:76px; }
+    body { background:var(--ink); color:var(--paper); font-family:-apple-system,BlinkMacSystemFont,sans-serif; padding-bottom:76px; }
     a { color:inherit; }
     img { max-width:100%; display:block; }
     .wrap { width:min(1120px,calc(100% - 28px)); margin:0 auto; }
-    header { position:sticky; top:0; z-index:20; background:rgba(12,12,14,.94); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
-    .nav { display:flex; align-items:center; justify-content:space-between; min-height:60px; gap:10px; }
+    header { position:sticky; top:0; z-index:20; background:rgba(12,12,14,.94); border-bottom:1px solid var(--line); }
+    .nav { display:flex; align-items:center; justify-content:space-between; min-height:60px; }
     .brand { font-weight:800; letter-spacing:.08em; text-transform:uppercase; font-size:.78rem; text-decoration:none; }
     .brand span { color:#e5383b; }
-    .hero { padding:40px 0 28px; background:radial-gradient(800px 280px at 90% -20%, rgba(193,18,31,.4), transparent 55%); }
+    .hero { padding:40px 0 28px; }
     h1 { font-size:clamp(2rem,7vw,3.4rem); line-height:1.05; max-width:12ch; }
     .lede { color:var(--muted); margin:14px 0 22px; max-width:40ch; }
-    .btn { display:inline-block; background:var(--red); color:#fff; text-decoration:none; font-weight:800; border:0; border-radius:12px; padding:12px 16px; font-size:.95rem; cursor:pointer; }
+    .btn { display:inline-block; background:var(--red); color:#fff; text-decoration:none; font-weight:800; border:0; border-radius:12px; padding:12px 16px; cursor:pointer; }
     .ghost { display:inline-block; border:1px solid var(--line); border-radius:12px; padding:12px 16px; text-decoration:none; font-weight:700; background:transparent; color:var(--paper); cursor:pointer; }
     .row { display:flex; flex-wrap:wrap; gap:8px; margin:18px 0; }
-    .chip { background:#1c1c22; border:1px solid var(--line); color:var(--paper); border-radius:999px; padding:8px 12px; font-size:.85rem; cursor:pointer; }
+    .chip { background:#1c1c22; border:1px solid var(--line); color:var(--paper); border-radius:999px; padding:8px 12px; cursor:pointer; }
     .chip.on { background:var(--red); border-color:var(--red); }
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px; }
     .card { background:var(--panel); border:1px solid var(--line); border-radius:18px; overflow:hidden; cursor:pointer; }
@@ -37,7 +35,7 @@
     .out { color:#e5383b; font-size:.8rem; }
     .section { padding:28px 0; }
     footer { border-top:1px solid var(--line); padding:24px 0 calc(20px + var(--safe)); color:var(--muted); font-size:.85rem; }
-    .dock { position:fixed; left:0; right:0; bottom:0; display:flex; gap:8px; padding:10px 12px calc(10px + var(--safe)); background:#111; border-top:1px solid var(--line); z-index:30; }
+    .dock { position:fixed; left:0; right:0; bottom:0; display:flex; gap:8px; padding:10px 12px calc(10px + var(--safe)); background:#111; border-top:1px solid var(--line); }
     .dock a { flex:1; text-align:center; text-decoration:none; font-weight:800; line-height:44px; border-radius:12px; }
     .dock .shop { background:var(--red); color:#fff; }
     .dock .call { background:#2a2a2a; }
@@ -52,6 +50,6 @@
 <body>
   <script src="./products.js"></script>
   <div id="root"></div>
-  <script src="./shop.js"></script>
+  <script src="./ui.js"></script>
 </body>
 </html>
