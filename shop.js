@@ -2,12 +2,13 @@ function money(n) {
   return "C$" + Number(n).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function esc(s) {
-  return String(s == null ? "" : s)
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/\"/g, """)
-    .replace(/'/g, "&#39;");
+  var t = String(s == null ? "" : s);
+  t = t.split("&").join("&");
+  t = t.split("<").join("<");
+  t = t.split(">").join(">");
+  t = t.split(String.fromCharCode(34)).join(""");
+  t = t.split(String.fromCharCode(39)).join("&#39;");
+  return t;
 }
 var state = { cat: "All", q: "", open: null, items: window.PRODUCTS || [] };
 function filtered() {
@@ -26,7 +27,7 @@ function render() {
   var items = filtered();
   var html = "";
   html += "<header><div class='wrap nav'><a class='brand' href='#top'>Electro <span>Cycles</span></a><a class='btn' href='tel:9053085392'>Call</a></div></header>";
-  html += "<section class='hero' id='top'><div class='wrap'><div class='tag'>Ontario dealer</div><h1>Ride farther.</h1><p class='lede'>E-bikes, scooters, mobility, and gear. GST/HST 729028506TZ0001.</p><a class='btn' href='#shop'>Shop inventory</a></div></section>";
+  html += "<section class='hero' id='top'><div class='wrap'><div class='tag'>Ontario dealer</div><h1>Ride farther.</h1><p class='lede'>E-bikes, scooters, mobility, and gear.</p><a class='btn' href='#shop'>Shop inventory</a></div></section>";
   html += "<section class='section' id='shop'><div class='wrap'><div class='row' id='cats'>";
   cats().forEach(function (c) {
     html += "<button class='chip" + (c === state.cat ? " on" : "") + "' data-cat='" + esc(c) + "'>" + esc(c) + "</button>";
@@ -42,14 +43,14 @@ function render() {
     html += "</div></article>";
   });
   html += "</div></div></section>";
-  html += "<section class='section' id='contact'><div class='wrap'><h2>Visit or call</h2><p class='lede'>905-308-5392 · info@electrocycles.ca · Ontario</p><a class='ghost' href='mailto:info@electrocycles.ca'>Email the shop</a></div></section>";
-  html += "<footer><div class='wrap'>Electro Cycles · CAD · GST/HST 729028506TZ0001</div></footer>";
+  html += "<section class='section' id='contact'><div class='wrap'><h2>Visit or call</h2><p class='lede'>905-308-5392 · info@electrocycles.ca</p><a class='ghost' href='mailto:info@electrocycles.ca'>Email the shop</a></div></section>";
+  html += "<footer><div class='wrap'>Electro Cycles</div></footer>";
   html += "<div class='dock'><a class='shop' href='#shop'>Shop</a><a class='call' href='tel:9053085392'>Call</a></div>";
   if (state.open) {
     var o = state.open;
     html += "<div class='modal' id='modal'><div class='sheet' id='sheet'>";
     if (o.image) html += "<img src='" + esc(o.image) + "' alt='" + esc(o.name) + "'>";
-    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price' style='margin:8px 0 12px'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'><a class='btn' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
+    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'><a class='btn' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
   }
   document.getElementById("root").innerHTML = html;
   document.getElementById("cats").onclick = function (e) {
@@ -69,8 +70,8 @@ function render() {
   var modal = document.getElementById("modal");
   if (modal) {
     modal.onclick = function (e) { if (e.target.id === "modal") { state.open = null; render(); } };
-    var close = document.getElementById("close");
-    if (close) close.onclick = function () { state.open = null; render(); };
+    var closeBtn = document.getElementById("close");
+    if (closeBtn) closeBtn.onclick = function () { state.open = null; render(); };
     var sheet = document.getElementById("sheet");
     if (sheet) sheet.onclick = function (e) { e.stopPropagation(); };
   }
