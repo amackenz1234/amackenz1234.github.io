@@ -1,10 +1,17 @@
 {
-  "name": "Electro Cycles",
-  "short_name": "Electro",
+  "name": "Nativ",
+  "short_name": "Nativ",
+  "description": "Build native iOS apps with AI and submit to App Store Connect",
   "start_url": "./",
-  "scope": "./",
   "display": "standalone",
-  "background_color": "#0c0c0e",
-  "theme_color": "#0c0c0e",
-  "icons": [{"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}]
+  "background_color": "#071018",
+  "theme_color": "#071018",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }
