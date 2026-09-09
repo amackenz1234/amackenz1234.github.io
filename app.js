@@ -59,6 +59,18 @@
     ]
   };
 
+  var TEAMS = [
+    { id: "A1B2C3D4E5", name: "Personal Team", role: "Account Holder" },
+    { id: "X9Y8Z7W6V5", name: "Nativ Demo LLC", role: "Admin" }
+  ];
+
+  var savedAccount = null;
+  try {
+    savedAccount = JSON.parse(localStorage.getItem("nativ.appleAccount") || "null");
+  } catch (e) {
+    savedAccount = null;
+  }
+
   var state = {
     view: "landing",
     prompt: "",
@@ -70,10 +82,38 @@
     submitOpen: false,
     submitStep: 0,
     submitting: false,
-    teamId: "",
+    linkOpen: false,
+    linkMethod: "signin",
+    linking: false,
+    appleId: (savedAccount && savedAccount.appleId) || "",
+    teamName: (savedAccount && savedAccount.teamName) || "",
+    teamId: (savedAccount && savedAccount.teamId) || "",
+    issuerId: (savedAccount && savedAccount.issuerId) || "",
+    keyId: (savedAccount && savedAccount.keyId) || "",
+    accountLinked: !!(savedAccount && savedAccount.linked),
+    pendingSubmitAfterLink: false,
     bundleId: "",
     toast: null
   };
+
+  function persistAccount() {
+    var payload = {
+      linked: state.accountLinked,
+      appleId: state.appleId,
+      teamId: state.teamId,
+      teamName: state.teamName,
+      issuerId: state.issuerId,
+      keyId: state.keyId
+    };
+    try {
+      localStorage.setItem("nativ.appleAccount", JSON.stringify(payload));
+    } catch (e) {}
+  }
+
+  function accountLabel() {
+    if (!state.accountLinked) return "Link Apple Developer";
+    return state.teamName || state.appleId || "Apple Developer";
+  }
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -165,6 +205,9 @@
         '<div class="nav-links">' +
           '<a class="nav-link" href="#features">Features</a>' +
           '<a class="nav-link" href="#publish">Publish</a>' +
+          '<button type="button" class="account-chip' + (state.accountLinked ? " linked" : "") + '" id="nav-link-account">' +
+            '<span class="dot" aria-hidden="true"></span>' + esc(accountLabel()) +
+          "</button>" +
           '<button type="button" class="btn" id="nav-start">Open compiler</button>' +
         "</div>" +
       "</div></header>" +
@@ -201,13 +244,18 @@
         '<div class="feature-list">' +
           "<article class=\"feature\"><h3>Cloud Xcode compiler</h3><p>Build, archive, and validate with a browser-based Xcode workflow — no Mac required to start.</p></article>" +
           "<article class=\"feature\"><h3>SwiftUI you own</h3><p>Read every file, tweak the project, export the full Xcode package whenever you want.</p></article>" +
-          "<article class=\"feature\"><h3>App Store Connect</h3><p>Connect your Apple Developer team and submit builds, metadata, and privacy details in two clicks.</p></article>" +
+          "<article class=\"feature\"><h3>App Store Connect</h3><p>Link your Apple Developer account, then submit builds, metadata, and privacy details in two clicks.</p></article>" +
         "</div>" +
       "</div></section>" +
       '<section class="section" id="publish"><div class="wrap">' +
         "<h2>From finished app to App Store review.</h2>" +
-        '<p class="lede">Signing, packaging, and delivery are automated once your developer account is linked.</p>' +
-        '<button type="button" class="btn btn-amber" id="cta-publish">Submit to App Store Connect</button>' +
+        '<p class="lede">Link App Store Connect with your Apple Developer account. Signing, packaging, and delivery are automated after that.</p>' +
+        '<div class="prompt-actions" style="justify-content:flex-start;gap:10px">' +
+          '<button type="button" class="btn btn-ghost" id="cta-link-account">' +
+            (state.accountLinked ? "Manage Apple Developer" : "Link Apple Developer account") +
+          "</button>" +
+          '<button type="button" class="btn btn-amber" id="cta-publish">Submit to App Store Connect</button>' +
+        "</div>" +
       "</div></section>" +
       '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span>Demo compiler · Not affiliated with Apple</span></footer>'
     );
@@ -236,9 +284,13 @@
             '<div class="traffic" aria-hidden="true"><span class="r"></span><span class="y"></span><span class="g"></span></div>' +
             "<strong>" + esc(state.appName) + ".xcodeproj</strong>" +
             (state.built ? '<span class="badge">Build succeeded</span>' : "") +
+            (state.accountLinked ? '<span class="badge">ASC linked</span>' : "") +
           "</div>" +
           '<div class="studio-actions">' +
             '<button type="button" class="btn btn-ghost" id="back-home">← Home</button>' +
+            '<button type="button" class="account-chip' + (state.accountLinked ? " linked" : "") + '" id="studio-link-account">' +
+              '<span class="dot" aria-hidden="true"></span>' + esc(accountLabel()) +
+            "</button>" +
             '<button type="button" class="btn btn-ghost" id="compile-btn"' + (state.building ? " disabled" : "") + ">" + buildLabel + "</button>" +
             '<button type="button" class="btn btn-amber" id="submit-btn">Submit to App Store Connect</button>' +
           "</div>" +
@@ -275,6 +327,81 @@
     );
   }
 
+  function renderLinkModal() {
+    if (!state.linkOpen) return "";
+
+    if (state.accountLinked) {
+      return (
+        '<div class="modal" id="link-modal">' +
+          '<div class="sheet wide" role="dialog" aria-labelledby="link-title">' +
+            '<h2 id="link-title">App Store Connect</h2>' +
+            "<p>Your Apple Developer account is linked for signing and uploads.</p>" +
+            '<div class="account-card">' +
+              '<div class="label">Linked account</div>' +
+              '<div class="name">' + esc(state.teamName || "Apple Developer") + "</div>" +
+              '<div class="meta">' +
+                esc(state.appleId || "API key auth") +
+                (state.teamId ? "<br>Team ID · " + esc(state.teamId) : "") +
+                (state.keyId ? "<br>Key ID · " + esc(state.keyId) : "") +
+              "</div>" +
+            "</div>" +
+            '<div class="sheet-actions">' +
+              '<button type="button" class="btn btn-ghost" id="unlink-account">Unlink</button>' +
+              '<button type="button" class="btn" id="close-link">Done</button>' +
+            "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    var teamOptions = TEAMS.map(function (t) {
+      var selected = state.teamId === t.id ? " selected" : "";
+      return '<option value="' + esc(t.id) + '"' + selected + ">" + esc(t.name + " · " + t.id) + "</option>";
+    }).join("");
+
+    var signinFields =
+      '<div class="field"><label for="apple-id">Apple ID</label>' +
+        '<input id="apple-id" type="email" autocomplete="username" placeholder="you@icloud.com" value="' + esc(state.appleId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+      '<div class="field"><label for="team-select">Developer team</label>' +
+        '<select id="team-select"' + (state.linking ? " disabled" : "") + ">" +
+          '<option value="">Select a team…</option>' + teamOptions +
+        "</select></div>" +
+      '<p class="hint">Demo flow — no credentials leave this browser. In production this uses Sign in with Apple / App Store Connect OAuth.</p>';
+
+    var apiFields =
+      '<div class="field"><label for="issuer-id">Issuer ID</label>' +
+        '<input id="issuer-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value="' + esc(state.issuerId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+      '<div class="field"><label for="key-id">Key ID</label>' +
+        '<input id="key-id" placeholder="AB12CD34EF" value="' + esc(state.keyId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+      '<div class="field"><label for="api-team-id">Team ID</label>' +
+        '<input id="api-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+      '<p class="hint">Paste an App Store Connect API key (.p8) in production. This demo only stores Issuer ID, Key ID, and Team ID locally.</p>';
+
+    return (
+      '<div class="modal" id="link-modal">' +
+        '<div class="sheet wide" role="dialog" aria-labelledby="link-title">' +
+          '<h2 id="link-title">Link Apple Developer account</h2>' +
+          "<p>Connect App Store Connect so Nativ can sign builds and upload to your team.</p>" +
+          '<div class="link-methods">' +
+            '<button type="button" class="method-card' + (state.linkMethod === "signin" ? " active" : "") + '" data-link-method="signin">' +
+              "<strong>Sign in with Apple</strong><span>Use your Apple ID and pick a developer team.</span>" +
+            "</button>" +
+            '<button type="button" class="method-card' + (state.linkMethod === "api" ? " active" : "") + '" data-link-method="api">' +
+              "<strong>App Store Connect API</strong><span>Use an Issuer ID, Key ID, and API key from Users and Access.</span>" +
+            "</button>" +
+          "</div>" +
+          (state.linkMethod === "api" ? apiFields : signinFields) +
+          '<div class="sheet-actions">' +
+            '<button type="button" class="btn btn-ghost" id="close-link">Cancel</button>' +
+            '<button type="button" class="btn" id="confirm-link"' + (state.linking ? " disabled" : "") + ">" +
+              (state.linking ? "Linking…" : "Link account") +
+            "</button>" +
+          "</div>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+
   function renderSubmitModal() {
     if (!state.submitOpen) return "";
     var steps = [
@@ -291,23 +418,32 @@
     }).join("");
 
     var done = state.submitStep >= 4;
+    var accountBlock = state.accountLinked
+      ? '<div class="account-card"><div class="label">Uploading as</div><div class="name">' +
+          esc(state.teamName || "Apple Developer") +
+          '</div><div class="meta">Team ID · ' + esc(state.teamId) +
+          (state.appleId ? "<br>" + esc(state.appleId) : "") +
+          "</div></div>"
+      : '<p class="hint">Link an Apple Developer account before submitting.</p>';
+
     return (
       '<div class="modal" id="submit-modal">' +
         '<div class="sheet" role="dialog" aria-labelledby="submit-title">' +
           '<h2 id="submit-title">Submit to App Store Connect</h2>' +
-          "<p>Connect your Apple Developer team. Nativ prepares signing, the archive, and the ASC upload.</p>" +
-          '<div class="field"><label for="team-id">Team ID</label>' +
-            '<input id="team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (done || state.submitting ? " disabled" : "") + " /></div>" +
+          "<p>Nativ prepares signing, the archive, and the ASC upload for your linked team.</p>" +
+          accountBlock +
           '<div class="field"><label for="bundle-id">Bundle ID</label>' +
             '<input id="bundle-id" placeholder="com.you.' + esc(state.appName.toLowerCase()) + '" value="' + esc(state.bundleId) + '"' + (done || state.submitting ? " disabled" : "") + " /></div>" +
           '<div class="steps">' + steps + "</div>" +
           '<div class="sheet-actions">' +
             '<button type="button" class="btn btn-ghost" id="close-submit">Close</button>' +
-            (done
-              ? '<button type="button" class="btn" id="done-submit">Done</button>'
-              : '<button type="button" class="btn btn-amber" id="confirm-submit"' + (state.submitting ? " disabled" : "") + ">" +
-                  (state.submitting ? "Submitting…" : "Submit build") +
-                "</button>") +
+            (!state.accountLinked
+              ? '<button type="button" class="btn" id="submit-needs-link">Link Apple Developer</button>'
+              : done
+                ? '<button type="button" class="btn" id="done-submit">Done</button>'
+                : '<button type="button" class="btn btn-amber" id="confirm-submit"' + (state.submitting ? " disabled" : "") + ">" +
+                    (state.submitting ? "Submitting…" : "Submit build") +
+                  "</button>") +
           "</div>" +
         "</div>" +
       "</div>"
@@ -319,9 +455,39 @@
     return '<div class="toast" role="status">' + esc(state.toast) + "</div>";
   }
 
+  function showToast(msg, ms) {
+    state.toast = msg;
+    render();
+    setTimeout(function () {
+      state.toast = null;
+      render();
+    }, ms || 2200);
+  }
+
+  function openLinkModal(thenSubmit) {
+    state.linkOpen = true;
+    state.linking = false;
+    state.pendingSubmitAfterLink = !!thenSubmit;
+    if (thenSubmit) state.submitOpen = false;
+    render();
+  }
+
+  function openSubmitModal() {
+    if (!state.accountLinked) {
+      openLinkModal(true);
+      showToast("Link your Apple Developer account to continue.");
+      return;
+    }
+    state.submitOpen = true;
+    state.submitStep = 0;
+    state.submitting = false;
+    render();
+  }
+
   function render() {
     var root = document.getElementById("app");
     var html = state.view === "studio" ? renderStudio() : renderLanding();
+    html += renderLinkModal();
     html += renderSubmitModal();
     html += renderToast();
     root.innerHTML = html;
@@ -371,22 +537,93 @@
     });
   }
 
+  function runLinkAccount() {
+    if (state.linking) return;
+
+    if (state.linkMethod === "signin") {
+      var appleIdEl = document.getElementById("apple-id");
+      var teamEl = document.getElementById("team-select");
+      state.appleId = ((appleIdEl && appleIdEl.value) || state.appleId || "").trim();
+      state.teamId = ((teamEl && teamEl.value) || state.teamId || "").trim();
+      if (!state.appleId || state.appleId.indexOf("@") === -1) {
+        showToast("Enter a valid Apple ID email.");
+        return;
+      }
+      if (!state.teamId) {
+        showToast("Select a developer team.");
+        return;
+      }
+      var team = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
+      state.teamName = team ? team.name : "Developer Team";
+      state.issuerId = "";
+      state.keyId = "";
+    } else {
+      var issuerEl = document.getElementById("issuer-id");
+      var keyEl = document.getElementById("key-id");
+      var apiTeamEl = document.getElementById("api-team-id");
+      state.issuerId = ((issuerEl && issuerEl.value) || state.issuerId || "").trim();
+      state.keyId = ((keyEl && keyEl.value) || state.keyId || "").trim();
+      state.teamId = ((apiTeamEl && apiTeamEl.value) || state.teamId || "").trim();
+      if (!state.issuerId || !state.keyId || !state.teamId) {
+        showToast("Enter Issuer ID, Key ID, and Team ID.");
+        return;
+      }
+      state.appleId = "";
+      state.teamName = "API Key · " + state.teamId;
+    }
+
+    state.linking = true;
+    render();
+
+    setTimeout(function () {
+      state.linking = false;
+      state.accountLinked = true;
+      state.linkOpen = false;
+      persistAccount();
+      if (state.view === "studio") {
+        pushLog("ok", "Linked App Store Connect · " + (state.teamName || state.teamId));
+      }
+      var shouldSubmit = state.pendingSubmitAfterLink;
+      state.pendingSubmitAfterLink = false;
+      state.toast = "Apple Developer account linked";
+      render();
+      setTimeout(function () {
+        state.toast = null;
+        if (shouldSubmit) {
+          state.submitOpen = true;
+          state.submitStep = 0;
+          state.submitting = false;
+        }
+        render();
+      }, 1400);
+    }, 900);
+  }
+
+  function unlinkAccount() {
+    state.accountLinked = false;
+    state.appleId = "";
+    state.teamName = "";
+    state.teamId = "";
+    state.issuerId = "";
+    state.keyId = "";
+    persistAccount();
+    showToast("Apple Developer account unlinked.");
+  }
+
   function runSubmit() {
     if (state.submitting) return;
-    var team = (document.getElementById("team-id") || {}).value || state.teamId;
+    if (!state.accountLinked) {
+      openLinkModal(true);
+      return;
+    }
     var bundle = (document.getElementById("bundle-id") || {}).value || state.bundleId;
-    state.teamId = (team || "").trim();
     state.bundleId = (bundle || "").trim();
-    if (!state.teamId || !state.bundleId) {
-      state.toast = "Enter your Team ID and Bundle ID to continue.";
-      render();
-      setTimeout(function () { state.toast = null; render(); }, 2200);
+    if (!state.bundleId) {
+      showToast("Enter a Bundle ID to continue.");
       return;
     }
     if (!state.built && state.view === "studio") {
-      state.toast = "Compile the project before submitting.";
-      render();
-      setTimeout(function () { state.toast = null; render(); }, 2200);
+      showToast("Compile the project before submitting.");
       return;
     }
 
@@ -429,9 +666,7 @@
       buildBtn.onclick = function () {
         var text = (document.getElementById("prompt") || {}).value || state.prompt;
         if (!(text || "").trim()) {
-          state.toast = "Describe your app idea first.";
-          render();
-          setTimeout(function () { state.toast = null; render(); }, 2000);
+          showToast("Describe your app idea first.");
           return;
         }
         openStudio(text.trim());
@@ -446,22 +681,24 @@
       };
     }
 
+    function wireLinkOpeners(ids) {
+      ids.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.onclick = function () { openLinkModal(false); };
+      });
+    }
+    wireLinkOpeners(["nav-link-account", "cta-link-account", "studio-link-account"]);
+
     var ctaPublish = document.getElementById("cta-publish");
     if (ctaPublish) {
       ctaPublish.onclick = function () {
         if (state.view !== "studio") {
           if (!state.prompt.trim()) state.prompt = EXAMPLES[0];
           openStudio(state.prompt);
-          setTimeout(function () {
-            state.submitOpen = true;
-            state.submitStep = 0;
-            render();
-          }, 2100);
+          setTimeout(function () { openSubmitModal(); }, 2100);
           return;
         }
-        state.submitOpen = true;
-        state.submitStep = 0;
-        render();
+        openSubmitModal();
       };
     }
 
@@ -472,14 +709,7 @@
     if (compile) compile.onclick = function () { runCompile(); };
 
     var submit = document.getElementById("submit-btn");
-    if (submit) {
-      submit.onclick = function () {
-        state.submitOpen = true;
-        state.submitStep = 0;
-        state.submitting = false;
-        render();
-      };
-    }
+    if (submit) submit.onclick = function () { openSubmitModal(); };
 
     document.querySelectorAll("[data-file]").forEach(function (el) {
       el.onclick = function () {
@@ -487,6 +717,53 @@
         render();
       };
     });
+
+    document.querySelectorAll("[data-link-method]").forEach(function (el) {
+      el.onclick = function () {
+        state.linkMethod = el.getAttribute("data-link-method") || "signin";
+        render();
+      };
+    });
+
+    var linkModal = document.getElementById("link-modal");
+    if (linkModal) {
+      linkModal.onclick = function (e) {
+        if (e.target.id === "link-modal") {
+          state.linkOpen = false;
+          state.pendingSubmitAfterLink = false;
+          render();
+        }
+      };
+    }
+    var closeLink = document.getElementById("close-link");
+    if (closeLink) {
+      closeLink.onclick = function () {
+        state.linkOpen = false;
+        state.pendingSubmitAfterLink = false;
+        render();
+      };
+    }
+    var confirmLink = document.getElementById("confirm-link");
+    if (confirmLink) confirmLink.onclick = function () { runLinkAccount(); };
+    var unlink = document.getElementById("unlink-account");
+    if (unlink) unlink.onclick = function () { unlinkAccount(); };
+
+    var appleId = document.getElementById("apple-id");
+    if (appleId) appleId.oninput = function (e) { state.appleId = e.target.value; };
+    var teamSelect = document.getElementById("team-select");
+    if (teamSelect) {
+      teamSelect.onchange = function (e) {
+        state.teamId = e.target.value;
+        var team = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
+        state.teamName = team ? team.name : state.teamName;
+      };
+    }
+    var issuerId = document.getElementById("issuer-id");
+    if (issuerId) issuerId.oninput = function (e) { state.issuerId = e.target.value; };
+    var keyId = document.getElementById("key-id");
+    if (keyId) keyId.oninput = function (e) { state.keyId = e.target.value; };
+    var apiTeam = document.getElementById("api-team-id");
+    if (apiTeam) apiTeam.oninput = function (e) { state.teamId = e.target.value; };
 
     var modal = document.getElementById("submit-modal");
     if (modal) {
@@ -503,9 +780,9 @@
     if (done) done.onclick = function () { state.submitOpen = false; render(); };
     var confirm = document.getElementById("confirm-submit");
     if (confirm) confirm.onclick = function () { runSubmit(); };
+    var needsLink = document.getElementById("submit-needs-link");
+    if (needsLink) needsLink.onclick = function () { openLinkModal(true); };
 
-    var team = document.getElementById("team-id");
-    if (team) team.oninput = function (e) { state.teamId = e.target.value; };
     var bundle = document.getElementById("bundle-id");
     if (bundle) bundle.oninput = function (e) { state.bundleId = e.target.value; };
   }
