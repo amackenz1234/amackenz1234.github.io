@@ -12,12 +12,12 @@
 		A10000000000000000000003 /* Product.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000003 /* Product.swift */; };
 		A10000000000000000000004 /* ShopStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000004 /* ShopStore.swift */; };
 		A10000000000000000000005 /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000005 /* Catalog.swift */; };
-		A10000000000000000000006 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* RootView.swift */; };
-		A10000000000000000000007 /* HeroSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* HeroSection.swift */; };
-		A10000000000000000000008 /* ShopSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* ShopSection.swift */; };
+		A10000000000000000000006 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000006 /* MainTabView.swift */; };
+		A10000000000000000000007 /* ShopHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000007 /* ShopHomeView.swift */; };
+		A10000000000000000000008 /* ContactView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000008 /* ContactView.swift */; };
 		A10000000000000000000009 /* ProductCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000009 /* ProductCard.swift */; };
 		A1000000000000000000000A /* ProductDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000A /* ProductDetailView.swift */; };
-		A1000000000000000000000B /* ContactSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B /* ContactSection.swift */; };
+		A1000000000000000000000B /* ProductImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000B /* ProductImageView.swift */; };
 		A1000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -27,12 +27,12 @@
 		B10000000000000000000003 /* Product.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Product.swift; sourceTree = "<group>"; };
 		B10000000000000000000004 /* ShopStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopStore.swift; sourceTree = "<group>"; };
 		B10000000000000000000005 /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
-		B10000000000000000000006 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		B10000000000000000000007 /* HeroSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroSection.swift; sourceTree = "<group>"; };
-		B10000000000000000000008 /* ShopSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopSection.swift; sourceTree = "<group>"; };
+		B10000000000000000000006 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		B10000000000000000000007 /* ShopHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopHomeView.swift; sourceTree = "<group>"; };
+		B10000000000000000000008 /* ContactView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactView.swift; sourceTree = "<group>"; };
 		B10000000000000000000009 /* ProductCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductCard.swift; sourceTree = "<group>"; };
 		B1000000000000000000000A /* ProductDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductDetailView.swift; sourceTree = "<group>"; };
-		B1000000000000000000000B /* ContactSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactSection.swift; sourceTree = "<group>"; };
+		B1000000000000000000000B /* ProductImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductImageView.swift; sourceTree = "<group>"; };
 		B1000000000000000000000C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B1000000000000000000000D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1000000000000000000000E /* ElectroCycles.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ElectroCycles.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -101,12 +101,12 @@
 		D10000000000000000000006 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				B10000000000000000000006 /* RootView.swift */,
-				B10000000000000000000007 /* HeroSection.swift */,
-				B10000000000000000000008 /* ShopSection.swift */,
+				B10000000000000000000006 /* MainTabView.swift */,
+				B10000000000000000000007 /* ShopHomeView.swift */,
+				B10000000000000000000008 /* ContactView.swift */,
 				B10000000000000000000009 /* ProductCard.swift */,
 				B1000000000000000000000A /* ProductDetailView.swift */,
-				B1000000000000000000000B /* ContactSection.swift */,
+				B1000000000000000000000B /* ProductImageView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -185,12 +185,12 @@
 				A10000000000000000000003 /* Product.swift in Sources */,
 				A10000000000000000000004 /* ShopStore.swift in Sources */,
 				A10000000000000000000005 /* Catalog.swift in Sources */,
-				A10000000000000000000006 /* RootView.swift in Sources */,
-				A10000000000000000000007 /* HeroSection.swift in Sources */,
-				A10000000000000000000008 /* ShopSection.swift in Sources */,
+				A10000000000000000000006 /* MainTabView.swift in Sources */,
+				A10000000000000000000007 /* ShopHomeView.swift in Sources */,
+				A10000000000000000000008 /* ContactView.swift in Sources */,
 				A10000000000000000000009 /* ProductCard.swift in Sources */,
 				A1000000000000000000000A /* ProductDetailView.swift in Sources */,
-				A1000000000000000000000B /* ContactSection.swift in Sources */,
+				A1000000000000000000000B /* ProductImageView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -6,7 +6,7 @@ struct ElectroCyclesApp: App {
 
   var body: some Scene {
     WindowGroup {
-      RootView()
+      MainTabView()
         .environment(store)
         .preferredColorScheme(.dark)
     }
