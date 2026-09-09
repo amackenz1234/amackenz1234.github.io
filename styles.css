@@ -188,11 +188,15 @@ img { display: block; max-width: 100%; }
 }
 .prompt-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
   padding: 4px 4px 2px;
+}
+.prompt-actions.publish-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip {
@@ -206,6 +210,16 @@ img { display: block; max-width: 100%; }
   transition: border-color 0.2s, background 0.2s;
 }
 .chip:hover { border-color: rgba(62, 224, 196, 0.45); background: rgba(62, 224, 196, 0.08); }
+.chip.active {
+  border-color: rgba(62, 224, 196, 0.55);
+  background: rgba(62, 224, 196, 0.14);
+  color: var(--paper);
+}
+.btn-generate {
+  width: 100%;
+  min-height: 48px;
+  font-size: 1.02rem;
+}
 
 .btn {
   display: inline-flex;
@@ -304,6 +318,20 @@ img { display: block; max-width: 100%; }
   font-size: 1.25rem;
   letter-spacing: -0.03em;
 }
+.preview-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.preview-item {
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px;
+  font-size: 0.78rem;
+}
+.preview-item strong { display: block; margin-bottom: 2px; }
+.preview-item span { color: var(--muted); }
 .preview-row {
   height: 10px;
   border-radius: 999px;
@@ -740,6 +768,32 @@ img { display: block; max-width: 100%; }
   max-width: min(420px, calc(100% - 24px));
   text-align: center;
   font-weight: 600;
+}
+
+.opening-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(4, 12, 18, 0.62);
+  backdrop-filter: blur(6px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  font-weight: 650;
+}
+.opening-overlay p { color: var(--mist); }
+.device-inner.theme-electro {
+  background: linear-gradient(180deg, #1a1014, #0c0c0e);
+}
+.device-inner.theme-electro h4 { color: #ff6b8a; }
+.device-inner.theme-habit { background: linear-gradient(180deg, #10241c, #0c1622); }
+.device-inner.theme-finance { background: linear-gradient(180deg, #10201c, #0b1520); }
+.device-inner.theme-meditation { background: linear-gradient(180deg, #12182a, #0b1220); }
+@media (max-width: 720px) {
+  .nav-link { display: none; }
 }
 
 .building-overlay {
