@@ -32,3 +32,8 @@ Every push and pull request that touches `ios/` builds the app on a free GitHub-
 macOS runner (a "virtual Mac") via [`.github/workflows/ios.yml`](../../.github/workflows/ios.yml).
 The workflow runs `xcodebuild` against the shared `ElectroCycles` scheme for an iOS
 Simulator destination with code signing disabled, so it needs no Apple developer account.
+
+It also archives the app for a device (unsigned) and packages it into an
+`ElectroCycles-unsigned.ipa`, uploaded as the `ElectroCycles-unsigned-ipa` workflow
+artifact. Because it is unsigned, it is meant for inspection or re-signing — installing
+on a physical device still requires signing with your own Apple account.
