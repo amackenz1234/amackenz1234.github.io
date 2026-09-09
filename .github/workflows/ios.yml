@@ -43,3 +43,49 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             clean build
+
+  ipa:
+    name: Package unsigned IPA
+    needs: build
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: ios/ElectroCycles
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Archive ElectroCycles for device (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ElectroCycles.xcodeproj \
+            -scheme ElectroCycles \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/ElectroCycles.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean archive
+
+      - name: Package .app into an unsigned .ipa
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/ElectroCycles.xcarchive/Products/Applications/ElectroCycles.app"
+          test -d "$APP"
+          WORK="$RUNNER_TEMP/ipa"
+          rm -rf "$WORK"
+          mkdir -p "$WORK/Payload"
+          cp -R "$APP" "$WORK/Payload/"
+          ( cd "$WORK" && zip -qry "$RUNNER_TEMP/ElectroCycles-unsigned.ipa" Payload )
+          unzip -l "$RUNNER_TEMP/ElectroCycles-unsigned.ipa"
+          echo "IPA_PATH=$RUNNER_TEMP/ElectroCycles-unsigned.ipa" >> "$GITHUB_ENV"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ElectroCycles-unsigned-ipa
+          path: ${{ env.IPA_PATH }}
+          if-no-files-found: error
