@@ -1,0 +1,17 @@
+{
+  "name": "Electro Cycles",
+  "install": "cd mcp/electro-cycles && npm ci",
+  "terminals": [
+    {
+      "name": "site",
+      "command": "python3 -m http.server 8000",
+      "description": "Serves the Electro Cycles static GitHub Pages site at http://localhost:8000"
+    }
+  ],
+  "ports": [
+    {
+      "name": "site",
+      "port": 8000
+    }
+  ]
+}

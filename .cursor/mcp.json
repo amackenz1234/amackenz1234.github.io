@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "electro-cycles": {
+      "command": "node",
+      "args": ["${workspaceFolder}/mcp/electro-cycles/src/index.js"]
+    }
+  }
+}
