@@ -541,8 +541,7 @@
     var names = Object.keys(state.files);
     var files = names.map(function (f) {
       var active = f === state.activeFile ? " active" : "";
-      var ext = f.indexOf(".plist") !== -1 ? "plist" : "swift";
-      return '<div class="file' + active + '" data-file="' + esc(f) + '"><span class="ico">' + ext + "</span>" + esc(f) + "</div>";
+      return '<div class="file' + active + '" data-file="' + esc(f) + '">' + esc(f) + "</div>";
     }).join("");
 
     var items = previewItems(state.prompt).map(function (row) {
