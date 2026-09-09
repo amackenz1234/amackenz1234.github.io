@@ -105,7 +105,8 @@ struct ShopHomeView: View {
   }
 
   private var inventory: some View {
-    VStack(alignment: .leading, spacing: 16) {
+    @Bindable var store = store
+    return VStack(alignment: .leading, spacing: 16) {
       Text("Shop inventory")
         .font(.title2.weight(.bold))
         .foregroundStyle(ECTheme.paper)
