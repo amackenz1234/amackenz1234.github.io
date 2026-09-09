@@ -8,6 +8,10 @@
 //   2. Create a Stripe Price for each product and map its SKU -> price ID below.
 // When both are present for every item in the cart, checkout redirects to
 // Stripe's hosted, PCI-compliant payment page instead of the demo form.
+//
+// Klarna: enable Klarna in your Stripe Dashboard (Settings > Payment methods)
+// and it appears automatically on the Stripe Checkout page. The built-in demo
+// checkout also offers a simulated Klarna "Pay in 4" option.
 window.PAYMENTS_CONFIG = {
   stripePublishableKey: "",
   prices: {
