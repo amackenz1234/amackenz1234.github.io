@@ -41,6 +41,7 @@ function render() {
     if (p.image) html += "<img src='" + esc(p.image) + "' alt='" + esc(p.name) + "'>";
     html += "</div><div class='body'><div class='tag'>" + esc(p.category) + "</div><h3>" + esc(p.name) + "</h3><div class='price'>" + money(p.price) + "</div>";
     if (p.qty <= 0) html += "<div class='out'>Special order</div>";
+    else html += "<button class='btn' data-add-sku='" + esc(p.sku) + "' style='margin-top:10px;padding:8px 12px;font-size:.85rem'>Add to cart</button>";
     html += "</div></article>";
   });
   html += "</div></div></section>";
@@ -51,7 +52,7 @@ function render() {
     var o = state.open;
     html += "<div class='modal' id='modal'><div class='sheet' id='sheet'>";
     if (o.image) html += "<img src='" + esc(o.image) + "' alt='" + esc(o.name) + "'>";
-    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'><a class='btn' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
+    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'>" + (o.qty > 0 ? "<button class='btn' data-add-sku='" + esc(o.sku) + "'>Add to cart</button>" : "") + "<a class='ghost' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
   }
   document.getElementById("root").innerHTML = html;
   document.getElementById("cats").onclick = function (e) {
@@ -62,7 +63,8 @@ function render() {
   };
   document.getElementById("q").oninput = function (e) { state.q = e.target.value; render(); };
   Array.prototype.forEach.call(document.querySelectorAll(".card"), function (card) {
-    card.onclick = function () {
+    card.onclick = function (e) {
+      if (e && e.target && e.target.closest("[data-add-sku]")) return;
       var sku = card.getAttribute("data-sku");
       state.open = state.items.filter(function (i) { return i.sku === sku; })[0] || null;
       render();
