@@ -1,4 +1,4 @@
-const CACHE = "nativ-v4";
+const CACHE = "nativ-v5";
 const ASSETS = [
   "./",
   "./index.html",
