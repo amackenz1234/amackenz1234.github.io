@@ -11,15 +11,16 @@ Native SwiftUI catalog app for the Electro Cycles Ontario shop.
 
 1. Open `ElectroCycles.xcodeproj` in Xcode.
 2. Select an iPhone simulator (or your device).
-3. Set your Development Team under Signing & Capabilities if needed.
+3. Set your Development Team under **Signing & Capabilities** if needed.
 4. Press Run (⌘R).
 
 ## Features
 
-- Browse the same inventory as the website (e-bikes, scooters, mobility, accessories)
-- Category filters and search
-- Product detail sheet with stock / special-order status
-- Call (`tel:`) and email (`mailto:`) actions for the shop
+- **Shop** tab with full-bleed hero, category filters, and search
+- Product grid with in-stock / special-order badges
+- Push navigation to product detail with ask/email, call, and share
+- **Contact** tab with phone, email, and GST/HST details
+- Same inventory as the website (`products.js` → `Catalog.swift`)
 
 ## Bundle ID
 

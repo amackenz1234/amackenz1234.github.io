@@ -1,42 +1,23 @@
 import SwiftUI
 
 struct ProductDetailView: View {
-  @Environment(\.dismiss) private var dismiss
   let product: Product
+  @State private var showActions = false
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 0) {
-        ZStack {
-          ECTheme.ink
-          if let url = product.imageURL {
-            AsyncImage(url: url) { phase in
-              switch phase {
-              case .success(let image):
-                image
-                  .resizable()
-                  .scaledToFill()
-              case .failure:
-                Image(systemName: "bicycle")
-                  .font(.system(size: 48))
-                  .foregroundStyle(ECTheme.muted)
-              case .empty:
-                ProgressView().tint(ECTheme.muted)
-              @unknown default:
-                EmptyView()
-              }
-            }
-          } else {
-            Image(systemName: "bicycle")
-              .font(.system(size: 48))
-              .foregroundStyle(ECTheme.muted)
+        ProductImageView(url: product.imageURL, height: 320)
+          .overlay(alignment: .bottom) {
+            LinearGradient(
+              colors: [.clear, ECTheme.ink.opacity(0.55)],
+              startPoint: .top,
+              endPoint: .bottom
+            )
+            .frame(height: 80)
           }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 240)
-        .clipped()
 
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
           Text(product.sku)
             .font(.caption.weight(.semibold))
             .tracking(0.8)
@@ -44,51 +25,78 @@ struct ProductDetailView: View {
             .foregroundStyle(ECTheme.muted)
 
           Text(product.name)
-            .font(.title2.weight(.bold))
+            .font(.title.weight(.bold))
             .foregroundStyle(ECTheme.paper)
 
-          Text(product.formattedPrice)
-            .font(.title3.weight(.heavy))
-            .foregroundStyle(ECTheme.paper)
-
-          if !product.isInStock {
-            Text("Special order")
-              .font(.subheadline)
-              .foregroundStyle(ECTheme.redBright)
+          HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(product.formattedPrice)
+              .font(.title2.weight(.heavy))
+              .foregroundStyle(ECTheme.paper)
+            Text(product.isInStock ? "In stock" : "Special order")
+              .font(.subheadline.weight(.semibold))
+              .foregroundStyle(product.isInStock ? ECTheme.muted : ECTheme.redBright)
           }
 
           Text(product.descriptionText)
             .font(.body)
             .foregroundStyle(ECTheme.muted)
+            .padding(.top, 4)
 
-          HStack(spacing: 10) {
+          VStack(spacing: 10) {
             if let mailURL = mailtoURL {
               Link(destination: mailURL) {
                 Text("Ask about this")
                   .font(.subheadline.weight(.heavy))
                   .foregroundStyle(.white)
                   .frame(maxWidth: .infinity)
-                  .padding(.vertical, 12)
+                  .padding(.vertical, 14)
                   .background(ECTheme.red, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
               }
             }
 
-            Button("Close") { dismiss() }
-              .font(.subheadline.weight(.bold))
-              .foregroundStyle(ECTheme.paper)
-              .padding(.horizontal, 16)
-              .padding(.vertical, 12)
-              .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                  .stroke(ECTheme.line, lineWidth: 1)
-              )
+            Link(destination: URL(string: "tel:\(Catalog.phone)")!) {
+              Label("Call \(Catalog.phoneDisplay)", systemImage: "phone.fill")
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(ECTheme.paper)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .overlay(
+                  RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(ECTheme.line, lineWidth: 1)
+                )
+            }
           }
           .padding(.top, 8)
+          .opacity(showActions ? 1 : 0)
+          .offset(y: showActions ? 0 : 12)
         }
-        .padding(16)
+        .padding(20)
       }
     }
-    .background(ECTheme.panel.ignoresSafeArea())
+    .background(ECTheme.ink.ignoresSafeArea())
+    .navigationTitle(product.name)
+    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .topBarTrailing) {
+        ShareLink(item: shareText) {
+          Image(systemName: "square.and.arrow.up")
+            .foregroundStyle(ECTheme.paper)
+        }
+      }
+    }
+    .onAppear {
+      withAnimation(.easeOut(duration: 0.4).delay(0.1)) {
+        showActions = true
+      }
+    }
+  }
+
+  private var shareText: String {
+    """
+    \(product.name) — \(product.formattedPrice)
+    Electro Cycles · \(Catalog.phoneDisplay)
+    \(Catalog.email)
+    """
   }
 
   private var mailtoURL: URL? {
@@ -96,7 +104,7 @@ struct ProductDetailView: View {
     components.scheme = "mailto"
     components.path = Catalog.email
     components.queryItems = [
-      URLQueryItem(name: "subject", value: product.name)
+      URLQueryItem(name: "subject", value: "Inquiry: \(product.name) (\(product.sku))")
     ]
     return components.url
   }
