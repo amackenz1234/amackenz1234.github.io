@@ -7,11 +7,13 @@ on:
       - 'ios/**'
       - '.github/workflows/ios.yml'
       - 'scripts/require-cloud-xcode.sh'
+      - 'scripts/run-full-macos.sh'
   pull_request:
     paths:
       - 'ios/**'
       - '.github/workflows/ios.yml'
       - 'scripts/require-cloud-xcode.sh'
+      - 'scripts/run-full-macos.sh'
   workflow_dispatch:
     inputs:
       app_name:
@@ -45,9 +47,9 @@ jobs:
         with:
           xcode-version: "27"
 
-      - name: Require full macOS 27 RC, Apple Silicon, and Xcode 27
+      - name: Run full macOS 27 RC
         working-directory: ${{ github.workspace }}
-        run: bash scripts/require-cloud-xcode.sh
+        run: bash scripts/run-full-macos.sh
 
       - name: Build ElectroCycles for iOS Simulator
         env:
@@ -81,9 +83,9 @@ jobs:
         with:
           xcode-version: "27"
 
-      - name: Require full macOS 27 RC, Apple Silicon, and Xcode 27
+      - name: Run full macOS 27 RC
         working-directory: ${{ github.workspace }}
-        run: bash scripts/require-cloud-xcode.sh
+        run: bash scripts/run-full-macos.sh
 
       - name: Archive ElectroCycles for device (unsigned)
         run: |
