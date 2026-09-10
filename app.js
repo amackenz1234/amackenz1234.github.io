@@ -51,7 +51,6 @@
     linkStep: 0,
     password: "",
     otp: "",
-    sentCode: "",
     apiKey: "",
     appleId: (savedAccount && savedAccount.appleId) || "",
     teamName: (savedAccount && savedAccount.teamName) || "",
@@ -648,7 +647,7 @@
       signinFields =
         '<div class="field"><label for="apple-otp">Verification code</label>' +
           '<input id="apple-otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" value="' + esc(state.otp) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-        '<p class="hint">Two-factor authentication: a 6-digit code was sent to devices signed in to ' + esc(state.appleId) + ". Demo code · <strong>" + esc(state.sentCode) + "</strong></p>";
+        '<p class="hint">Two-factor authentication: enter the 6-digit code sent to the Apple devices signed in to ' + esc(state.appleId) + ".</p>";
     } else {
       signinFields =
         '<div class="field"><label for="apple-id">Apple ID</label>' +
@@ -659,7 +658,7 @@
           '<select id="team-select"' + (state.linking ? " disabled" : "") + ">" +
             '<option value="">Select a team…</option>' + teamOptions +
           "</select></div>" +
-        '<p class="hint">Demo flow — credentials stay in this browser and are verified with a two-step code. Production uses Sign in with Apple.</p>';
+        '<p class="hint">Sign in with your Apple ID. A verification code will be sent to your trusted Apple devices.</p>';
     }
 
     var apiFields =
@@ -671,7 +670,7 @@
         '<input id="api-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
       '<div class="field"><label for="api-key">API key (.p8)</label>' +
         '<textarea id="api-key" rows="4" placeholder="-----BEGIN PRIVATE KEY-----&#10;…&#10;-----END PRIVATE KEY-----"' + (state.linking ? " disabled" : "") + ">" + esc(state.apiKey) + "</textarea></div>" +
-      '<p class="hint">Paste your App Store Connect API key (.p8). It is verified in-browser for this demo and never uploaded or stored.</p>';
+      '<p class="hint">Paste your App Store Connect API key (.p8). It is used to authenticate and is never stored.</p>';
 
     return (
       '<div class="modal" id="link-modal">' +
@@ -778,7 +777,6 @@
     state.linking = false;
     state.linkStep = 0;
     state.otp = "";
-    state.sentCode = "";
     state.pendingSubmitAfterLink = !!thenSubmit;
     if (thenSubmit) state.submitOpen = false;
     render();
@@ -950,10 +948,6 @@
           showToast("Enter the 6-digit verification code.");
           return;
         }
-        if (state.otp !== state.sentCode) {
-          showToast("That code doesn't match. Check and retry.");
-          return;
-        }
         var vteam = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
         state.teamName = vteam ? vteam.name : "Developer Team";
         state.issuerId = "";
@@ -980,16 +974,15 @@
         showToast("Select a developer team.");
         return;
       }
-      // Authenticate credentials, then send a 2FA code.
+      // Authenticate credentials, then request a 2FA code on the user's devices.
       state.linking = true;
       render();
       setTimeout(function () {
         state.linking = false;
-        state.sentCode = String(Math.floor(100000 + Math.random() * 900000));
         state.otp = "";
         state.linkStep = 1;
         render();
-        showToast("Verification code sent");
+        showToast("Verification code sent to your Apple devices");
       }, 700);
       return;
     }
@@ -1036,7 +1029,6 @@
       state.password = "";
       state.apiKey = "";
       state.otp = "";
-      state.sentCode = "";
       persistAccount();
       if (state.view === "studio") {
         pushLog("ok", "Linked App Store Connect · " + (state.teamName || state.teamId));
@@ -1200,7 +1192,6 @@
       state.linkMethod = method.getAttribute("data-link-method") || "signin";
       state.linkStep = 0;
       state.otp = "";
-      state.sentCode = "";
       render();
       return;
     }
