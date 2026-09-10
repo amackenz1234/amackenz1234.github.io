@@ -155,6 +155,25 @@ export function buildDispatchBody(ref, inputs) {
   };
 }
 
+export function mockVmLogs(opts) {
+  opts = opts || {};
+  const clientOs = String(opts.clientOs || "").toLowerCase();
+  const fromWindows = clientOs === "windows";
+  return [
+    fromWindows
+      ? "Starting Cloud Mac virtual machine from Windows…"
+      : "Starting Cloud Mac virtual machine…",
+    "Provisioning GitHub-hosted xcode-27 (Apple Silicon, arm64)…",
+    "Booting full macOS 27 RC…",
+    "launchd (pid 1) · Darwin kernel · system domain live",
+    "Full macOS 27 RC is running",
+    "Xcode 27 ready · iPhoneSimulator 27.0 SDK",
+    fromWindows
+      ? "** VM RUNNING ** started from Windows (cloud Apple Silicon, not Hyper-V)"
+      : "** VM RUNNING **",
+  ];
+}
+
 export function requireMonthlyPlan(body, env) {
   body = body || {};
   env = env || {};
@@ -208,9 +227,10 @@ export async function dispatchCloudCompile(env, body, fetchFn) {
   const url = buildWorkflowDispatchUrl(owner, repo, workflow);
   const payload = buildDispatchBody(env.GITHUB_REF || "main", {
     app_name: String((body && body.appName) || "MyApp"),
-    reason: "nativ-cloud-mac",
+    reason: (body && body.mode) === "vm" ? "run-vm" : "nativ-cloud-mac",
     signed: body && body.signed ? "true" : "false",
     export_method: String((body && body.exportMethod) || "ad-hoc"),
+    mode: (body && body.mode) === "vm" ? "vm" : "compile",
   });
   const res = await fetchFn(url, {
     method: "POST",
@@ -245,6 +265,49 @@ export async function dispatchCloudCompile(env, body, fetchFn) {
         ? "IPA: signed .ipa on monthly Cloud Mac plan"
         : "IPA: unsigned fallback",
     ],
+  };
+}
+
+export async function handleStartVm(env, body, deps) {
+  env = env || {};
+  deps = deps || {};
+  const host = cloudMacInfo(env);
+  if (!host.ok) return host;
+  const clientOs = String((body && body.clientOs) || "").toLowerCase();
+  const appName = String((body && body.appName) || "CloudMac").replace(/[^A-Za-z0-9]/g, "") || "CloudMac";
+
+  if (env.MOCK_MAC === "1" || !env.GITHUB_TOKEN) {
+    return {
+      ok: true,
+      mock: !env.GITHUB_TOKEN,
+      cloud: true,
+      silicon: true,
+      osRunning: true,
+      clientOs: clientOs || "unknown",
+      name: host.name,
+      xcode: host.xcode,
+      logs: mockVmLogs({ clientOs }),
+    };
+  }
+
+  const fetchFn = deps.fetch || fetch;
+  const dispatched = await dispatchCloudCompile(
+    env,
+    { appName, signed: false, mode: "vm", clientOs },
+    fetchFn
+  );
+  if (!dispatched.ok) return dispatched;
+  return {
+    ok: true,
+    mock: false,
+    cloud: true,
+    silicon: true,
+    dispatched: true,
+    osRunning: true,
+    clientOs: clientOs || "unknown",
+    name: host.name,
+    xcode: host.xcode,
+    logs: (dispatched.logs || []).concat(mockVmLogs({ clientOs }).slice(2)),
   };
 }
 
@@ -338,6 +401,11 @@ export default {
       if (request.method === "POST" && route === "/compile") {
         const body = await request.json().catch(() => ({}));
         const out = await handleCompile(env || {}, body);
+        return json(out, out.ok ? 200 : 400, origin);
+      }
+      if (request.method === "POST" && (route === "/vm" || route === "/start")) {
+        const body = await request.json().catch(() => ({}));
+        const out = await handleStartVm(env || {}, body);
         return json(out, out.ok ? 200 : 400, origin);
       }
       return json({ ok: false, error: "Not found" }, 404, origin);

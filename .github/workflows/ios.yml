@@ -37,14 +37,29 @@ on:
         description: IPA export method (ad-hoc, app-store, development)
         required: false
         default: ad-hoc
+      mode:
+        description: compile (build IPA) or vm (boot the Cloud Mac from Windows or any OS)
+        required: false
+        default: compile
 
 concurrency:
   group: ios-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  vm:
+    name: Run Cloud Mac VM
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'vm' }}
+    runs-on: xcode-27
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run full macOS 27 RC
+        run: bash scripts/run-full-macos.sh
+
   build:
     name: Full Cloud Mac (macOS 27 RC)
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.mode != 'vm' }}
     # Full GitHub-hosted macOS 27 RC VM on Apple Silicon (xcode-27 image).
     # https://github.blog/changelog/2026-07-16-xcode-27-runner-image-now-in-public-preview/
     runs-on: xcode-27
@@ -82,6 +97,7 @@ jobs:
 
   ipa:
     name: Package IPA
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.mode != 'vm' }}
     needs: build
     runs-on: xcode-27
     steps:

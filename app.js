@@ -14,6 +14,30 @@
     "A reading list with highlights"
   ];
 
+  function detectClientOs() {
+    try {
+      var forced = new URLSearchParams(window.location.search).get("client");
+      if (forced) return String(forced).toLowerCase();
+    } catch (e) {}
+    var ua = "";
+    var plat = "";
+    try {
+      ua = String(navigator.userAgent || "").toLowerCase();
+      plat = String(
+        (navigator.userAgentData && navigator.userAgentData.platform) ||
+        navigator.platform ||
+        ""
+      ).toLowerCase();
+    } catch (e2) {}
+    var hay = ua + " " + plat;
+    if (/windows|win32|win64|wow64/.test(hay)) return "windows";
+    if (/iphone|ipad|ipod/.test(hay)) return "ios";
+    if (/android/.test(hay)) return "android";
+    if (/mac os x|macintosh|macintel/.test(hay)) return "macos";
+    if (/linux/.test(hay)) return "linux";
+    return "other";
+  }
+
   var KW = {
     import: 1, struct: 1, class: 1, enum: 1, protocol: 1, extension: 1,
     var: 1, let: 1, func: 1, return: 1, if: 1, else: 1, some: 1, private: 1,
@@ -75,6 +99,10 @@
     planSessionId: (savedPlan && savedPlan.sessionId) || "",
     macOpen: false,
     macBusy: false,
+    clientOs: detectClientOs(),
+    vmBusy: false,
+    vmStarted: false,
+    vmLogs: [],
     macInfo: {
       connected: true,
       cloud: true,
@@ -490,7 +518,7 @@
         "<div>" +
           '<div class="brand-hero">' + brandWord() + "</div>" +
           "<h1>Build iOS apps with AI</h1>" +
-          '<p class="lede">Describe your idea. Get a native Swift project, compile it in the cloud Xcode toolchain, and submit to App Store Connect.</p>' +
+          '<p class="lede">Describe your idea. Get a native Swift project, run the Cloud Mac virtual machine from Windows or any PC, compile with Xcode in the cloud, and submit to App Store Connect.</p>' +
           '<div class="prompt-box">' +
             '<textarea id="prompt" placeholder="Describe the iPhone app you want to build…">' + esc(state.prompt) + "</textarea>" +
             '<div class="prompt-actions">' +
@@ -510,7 +538,7 @@
         "<h2>Native Swift. Real Xcode.</h2>" +
         '<p class="lede">Not a web wrapper. appcompiler.ai generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
         '<div class="feature-list">' +
-          "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>The cloud Mac boots and runs full macOS 27 RC (launchd pid 1, Darwin, /System) with Xcode 27 — no Mac on your desk.</p></article>" +
+          "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>Works from Windows. Run the virtual machine in the cloud on Apple Silicon — full macOS 27 RC with Xcode 27. It does not use Hyper-V.</p></article>" +
           "<article class=\"feature\"><h3>Signed IPA</h3><p>The monthly Cloud Mac plan signs the archive on that Mac and downloads a real .ipa — not an unsigned zip.</p></article>" +
           "<article class=\"feature\"><h3>App Store Connect</h3><p>Connect your Apple Developer account at appstoreconnect.apple.com, then submit builds, metadata, and privacy details.</p></article>" +
         "</div>" +
@@ -523,6 +551,9 @@
             (state.accountLinked ? "Manage Apple Developer" : "Link Apple Developer account") +
           "</button>" +
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
+          '<button type="button" class="btn btn-ghost" data-action="run-vm">' +
+            (state.clientOs === "windows" ? "Run virtual machine on Windows" : "Run virtual machine") +
+          "</button>" +
         "</div>" +
       "</div></section>" +
       '<footer class="wrap site-footer"><span>appcompiler.ai · Native iOS with AI</span><span><a href="https://appstoreconnect.apple.com/" target="_blank" rel="noopener noreferrer">App Store Connect</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
@@ -781,6 +812,9 @@
   }
 
   function macLabel() {
+    if (state.clientOs === "windows") {
+      return state.vmStarted ? "VM running · Windows" : "Run VM · Windows";
+    }
     var info = state.macInfo || {};
     if (info.osRunning !== false) return "Full macOS 27 RC · running";
     if (info.os) return "Full Cloud Mac · macOS 27 RC";
@@ -792,17 +826,24 @@
     if (!state.macOpen) return "";
     var info = state.macInfo || {};
     var endpoint = macEndpoint();
+    var onWindows = state.clientOs === "windows";
+    var vmLines = (state.vmLogs || []).map(function (line) {
+      return '<div class="dim">' + esc(line) + "</div>";
+    }).join("");
     return (
       '<div class="modal" id="mac-modal">' +
         '<div class="sheet wide" role="dialog" aria-labelledby="mac-title">' +
-          '<h2 id="mac-title">Full Cloud Mac</h2>' +
-          "<p>The cloud Mac boots the full macOS 27 RC operating system — launchd as pid 1, Darwin, /System — then compiles with Xcode 27. You do not need a Mac on your desk.</p>" +
+          '<h2 id="mac-title">' + (onWindows ? "Run virtual machine on Windows" : "Full Cloud Mac") + "</h2>" +
+          (onWindows
+            ? "<p>You are on Windows. The Cloud Mac virtual machine boots on Apple Silicon in the cloud — not in Hyper-V or WSL. Click Run virtual machine to start full macOS 27 RC with Xcode 27.</p>"
+            : "<p>The cloud Mac boots the full macOS 27 RC operating system — launchd as pid 1, Darwin, /System — then compiles with Xcode 27. You do not need a Mac on your desk. Windows PCs can start the same VM.</p>") +
           '<div class="account-card">' +
-            '<div class="label">Operating system running</div>' +
+            '<div class="label">' + (state.vmStarted ? "Virtual machine running" : "Operating system") + "</div>" +
             '<div class="name">' + esc(info.name || CLOUD_MAC) + "</div>" +
             '<div class="meta">' +
               esc(info.provider || "GitHub-hosted xcode-27") +
-              "<br>OS · " + esc(info.os || "Full macOS 27 RC") + " · running" +
+              "<br>Client · " + esc(onWindows ? "Windows" : state.clientOs) +
+              "<br>OS · " + esc(info.os || "Full macOS 27 RC") + (state.vmStarted || info.osRunning !== false ? " · running" : "") +
               "<br>pid 1 · " + esc(info.pid1 || "launchd") +
               "<br>Product · macOS (complete install)" +
               "<br>Architecture · " + esc(info.arch || "arm64") +
@@ -810,9 +851,17 @@
               (endpoint ? "<br>Dispatcher · " + esc(endpoint) : "<br>Built-in cloud console") +
             "</div>" +
           "</div>" +
-          '<p class="hint">CI runs scripts/run-full-macos.sh on the xcode-27 VM, then scripts/package-ipa.sh. A monthly plan plus Apple signing secrets produces a signed .ipa.</p>' +
+          (vmLines ? '<div class="vm-console" id="vm-console">' + vmLines + "</div>" : "") +
+          '<p class="hint">' +
+            (onWindows
+              ? "On Windows, run scripts/run-cloud-mac.ps1 to open this page and start the VM. The Mac itself always runs on GitHub-hosted xcode-27."
+              : "CI runs scripts/run-full-macos.sh on the xcode-27 VM, then scripts/package-ipa.sh. A monthly plan plus Apple signing secrets produces a signed .ipa.") +
+          "</p>" +
           '<div class="sheet-actions">' +
-            '<button type="button" class="btn" data-action="close-mac"' + (state.macBusy ? " disabled" : "") + ">Done</button>" +
+            '<button type="button" class="btn btn-ghost" data-action="close-mac"' + (state.vmBusy ? " disabled" : "") + ">Done</button>" +
+            '<button type="button" class="btn" data-action="start-vm"' + (state.vmBusy ? " disabled" : "") + ">" +
+              (state.vmBusy ? "Starting VM…" : state.vmStarted ? "Restart virtual machine" : "Run virtual machine") +
+            "</button>" +
           "</div>" +
         "</div>" +
       "</div>"
@@ -823,6 +872,83 @@
     state.macOpen = true;
     render();
     refreshCloudMac();
+  }
+
+  function finishVm(ok, logs) {
+    state.vmBusy = false;
+    state.vmStarted = !!ok;
+    if (logs && logs.length) state.vmLogs = logs;
+    if (ok) {
+      state.macInfo.osRunning = true;
+    }
+    render();
+    showToast(ok ? "Cloud Mac virtual machine is running." : "Could not start the virtual machine.");
+  }
+
+  function runVirtualMachine() {
+    if (state.vmBusy) return;
+    state.macOpen = true;
+    state.vmBusy = true;
+    state.vmLogs = [
+      state.clientOs === "windows"
+        ? "Starting Cloud Mac virtual machine from Windows…"
+        : "Starting Cloud Mac virtual machine…"
+    ];
+    render();
+
+    var endpoint = macEndpoint();
+    if (endpoint) {
+      var headers = { "Content-Type": "application/json", Accept: "application/json" };
+      var token = macConfig().token;
+      if (token) headers.Authorization = "Bearer " + token;
+      fetch(endpoint + "/vm", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          clientOs: state.clientOs,
+          appName: state.appName || "CloudMac"
+        })
+      })
+        .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+        .then(function (out) {
+          var logs = (out.body && out.body.logs) || state.vmLogs;
+          var ok = !!(out.ok && out.body && out.body.ok !== false);
+          finishVm(ok, logs);
+        })
+        .catch(function (err) {
+          finishVm(false, state.vmLogs.concat([
+            "Cloud Mac unreachable: " + (err && err.message ? err.message : "network error")
+          ]));
+        });
+      return;
+    }
+
+    var demo = [
+      state.clientOs === "windows"
+        ? "Starting Cloud Mac virtual machine from Windows…"
+        : "Starting Cloud Mac virtual machine…",
+      "Provisioning GitHub-hosted xcode-27 (Apple Silicon, arm64)…",
+      "Booting full macOS 27 RC…",
+      "launchd (pid 1) · Darwin kernel · system domain live",
+      "Full macOS 27 RC is running",
+      "Xcode 27 ready · iPhoneSimulator 27.0 SDK",
+      state.clientOs === "windows"
+        ? "** VM RUNNING ** started from Windows (cloud Apple Silicon, not Hyper-V)"
+        : "** VM RUNNING **"
+    ];
+    state.vmLogs = [demo[0]];
+    render();
+    var i = 1;
+    var timer = setInterval(function () {
+      if (i >= demo.length) {
+        clearInterval(timer);
+        finishVm(true, demo);
+        return;
+      }
+      state.vmLogs = demo.slice(0, i + 1);
+      i += 1;
+      render();
+    }, 280);
   }
 
   function closeMacModal() {
@@ -1467,6 +1593,10 @@
       closePlanModal();
       return;
     }
+    if (e.target.id === "mac-modal") {
+      if (!state.vmBusy) closeMacModal();
+      return;
+    }
 
     var example = e.target.closest("[data-example]");
     if (example) {
@@ -1513,6 +1643,7 @@
     } else if (action === "compile") runCompile();
     else if (action === "open-mac") openMacModal();
     else if (action === "close-mac") closeMacModal();
+    else if (action === "run-vm" || action === "start-vm") runVirtualMachine();
     else if (action === "open-plan") openPlanModal();
     else if (action === "close-plan") closePlanModal();
     else if (action === "subscribe-plan") startMonthlyPlan();

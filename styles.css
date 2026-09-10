@@ -764,6 +764,19 @@ img { display: block; max-width: 100%; }
   line-height: 1.45;
 }
 
+.vm-console {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #061018;
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  max-height: 200px;
+  overflow: auto;
+}
+
 .toast {
   position: fixed;
   left: 50%;

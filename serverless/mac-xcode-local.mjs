@@ -4,7 +4,7 @@
 //   MOCK_MAC=1 node serverless/mac-xcode-local.mjs
 
 import http from "node:http";
-import worker, { handleCompile, handleHealth } from "./mac-xcode-worker.mjs";
+import worker, { handleCompile, handleHealth, handleStartVm } from "./mac-xcode-worker.mjs";
 
 const port = parseInt(process.env.PORT || "8788", 10);
 const env = {
@@ -46,6 +46,15 @@ const server = http.createServer(async (req, res) => {
       for await (const chunk of req) raw += chunk;
       const body = raw ? JSON.parse(raw) : {};
       const out = await handleCompile(env, body);
+      res.writeHead(out.ok ? 200 : 400, headers);
+      res.end(JSON.stringify(out));
+      return;
+    }
+    if (req.method === "POST" && (route === "/vm" || route === "/start")) {
+      let raw = "";
+      for await (const chunk of req) raw += chunk;
+      const body = raw ? JSON.parse(raw) : {};
+      const out = await handleStartVm(env, body);
       res.writeHead(out.ok ? 200 : 400, headers);
       res.end(JSON.stringify(out));
       return;

@@ -40,6 +40,20 @@ MOCK_MAC=1 node serverless/mac-xcode-local.mjs
 Point [`../mac-config.js`](../mac-config.js) at `http://127.0.0.1:8788`.
 Without an endpoint, the studio still uses the built-in Cloud Mac console.
 
+### Run the VM from Windows
+
+`POST /vm` (also `/start`) boots the Cloud Mac without compiling. The site
+sends `{ clientOs: "windows" }` when the browser is on Windows (or
+`?client=windows`). The worker dispatches `ios.yml` with `mode=vm`, which
+only runs [`scripts/run-full-macos.sh`](../scripts/run-full-macos.sh).
+
+From a Windows PC:
+
+```powershell
+$env:NATIV_MAC_ENDPOINT = "http://127.0.0.1:8788"
+powershell -File scripts/run-cloud-mac.ps1
+```
+
 ### Signed IPA
 
 [`scripts/package-ipa.sh`](../scripts/package-ipa.sh) archives Faraday on the

@@ -12,9 +12,11 @@ import {
   buildWorkflowDispatchUrl,
   buildDispatchBody,
   mockCompileLogs,
+  mockVmLogs,
   dispatchCloudCompile,
   handleHealth,
   handleCompile,
+  handleStartVm,
 } from "./mac-xcode-worker.mjs";
 
 test("authorize accepts matching bearer token", () => {
@@ -157,6 +159,49 @@ test("handleHealth and handleCompile work without GitHub (demo cloud Mac)", asyn
   assert.equal(compiled.ok, true);
   assert.equal(compiled.cloud, true);
   assert.match(compiled.logs.join("\n"), /CafeFinderApp.swift/);
+});
+
+test("mock VM logs say the machine started from Windows", () => {
+  const logs = mockVmLogs({ clientOs: "windows" }).join("\n");
+  assert.match(logs, /from Windows/);
+  assert.match(logs, /VM RUNNING/);
+  assert.match(logs, /not Hyper-V/);
+  assert.match(logs, /full macOS 27 RC/i);
+});
+
+test("handleStartVm boots a demo VM from Windows without GitHub", async () => {
+  const out = await handleStartVm(
+    { MOCK_MAC: "1", MAC_NAME: "appcompiler.ai Cloud Mac" },
+    { clientOs: "windows" }
+  );
+  assert.equal(out.ok, true);
+  assert.equal(out.cloud, true);
+  assert.equal(out.osRunning, true);
+  assert.equal(out.clientOs, "windows");
+  assert.match(out.logs.join("\n"), /Starting Cloud Mac virtual machine from Windows/);
+  assert.match(out.logs.join("\n"), /VM RUNNING/);
+});
+
+test("handleStartVm with a token dispatches mode=vm", async () => {
+  const calls = [];
+  const fakeFetch = async (url, opts) => {
+    calls.push({ url, opts });
+    return { status: 204, text: async () => "" };
+  };
+  const out = await handleStartVm(
+    {
+      GITHUB_TOKEN: "ghs_test",
+      GITHUB_OWNER: "acme",
+      GITHUB_REPO: "app",
+    },
+    { clientOs: "windows", appName: "CloudMac" },
+    { fetch: fakeFetch }
+  );
+  assert.equal(out.ok, true);
+  assert.equal(out.dispatched, true);
+  const payload = JSON.parse(calls[0].opts.body);
+  assert.equal(payload.inputs.mode, "vm");
+  assert.equal(payload.inputs.reason, "run-vm");
 });
 
 test("handleCompile with a token dispatches instead of mocking", async () => {
