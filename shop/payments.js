@@ -37,8 +37,16 @@
   function subtotal() { return lines().reduce(function (s, l) { return s + l.p.price * l.qty; }, 0); }
   function tax() { return subtotal() * HST_RATE; }
   function total() { return subtotal() + tax(); }
+  function installments() {
+    var cents = Math.round(total() * 100);
+    var base = Math.floor(cents / 4);
+    var rem = cents - base * 4;
+    var out = [];
+    for (var i = 0; i < 4; i++) out.push((base + (i < rem ? 1 : 0)) / 100);
+    return out;
+  }
 
-  var ui = { open: false, view: "cart", processing: false, order: null, error: "" };
+  var ui = { open: false, view: "cart", method: "card", processing: false, order: null, error: "" };
 
   function add(sku) {
     if (!find(sku)) return;
@@ -114,7 +122,7 @@
     var paid = total();
     window.setTimeout(function () {
       ui.processing = false;
-      ui.order = { id: "EC-" + Date.now().toString(36).toUpperCase().slice(-6), email: email, total: paid };
+      ui.order = { id: "EC-" + Date.now().toString(36).toUpperCase().slice(-6), email: email, total: paid, method: "Card" };
       ui.view = "success";
       clearCart();
       render();
@@ -122,9 +130,24 @@
   }
   function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; }
 
+  function payKlarna() {
+    var email = val("ecp-email");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Enter a valid email to continue with Klarna.");
+    ui.error = ""; ui.processing = true; render();
+    var paid = total();
+    window.setTimeout(function () {
+      ui.processing = false;
+      ui.order = { id: "EC-" + Date.now().toString(36).toUpperCase().slice(-6), email: email, total: paid, method: "Klarna \u2014 Pay in 4" };
+      ui.view = "success";
+      clearCart();
+      render();
+    }, 1200);
+  }
+
   function checkout() {
     if (!lines().length) return;
     if (stripeEnabled()) return payWithStripe();
+    if (ui.method === "klarna") return payKlarna();
     payDemo();
   }
 
@@ -170,37 +193,81 @@
           '<div><span>Subtotal</span><span>' + money(subtotal()) + "</span></div>" +
           '<div><span>HST (13%)</span><span>' + money(tax()) + "</span></div>" +
           '<div class="ecp-grand"><span>Total</span><span>' + money(total()) + "</span></div>" +
+          '<div class="ecp-klarna-hint">or 4 interest-free payments of ' + money(installments()[0]) + ' with <span class="ecp-klarna-badge">Klarna</span></div>' +
         "</div>" +
         '<button type="button" class="ecp-btn" data-ecp="to-checkout">Proceed to checkout</button>';
     }
     return header("Your cart") + '<div class="ecp-scroll">' + body + "</div>";
   }
 
+  function cardFields() {
+    return (
+      '<div class="ecp-field"><label for="ecp-name">Cardholder name</label><input id="ecp-name" type="text" placeholder="Alex Rider" autocomplete="cc-name"></div>' +
+      '<div class="ecp-field"><label for="ecp-email">Email for receipt</label><input id="ecp-email" type="email" placeholder="you@example.com" autocomplete="email"></div>' +
+      '<div class="ecp-field"><label for="ecp-card">Card number</label><input id="ecp-card" inputmode="numeric" placeholder="4242 4242 4242 4242" autocomplete="cc-number"></div>' +
+      '<div class="ecp-field-row">' +
+        '<div class="ecp-field"><label for="ecp-exp">Expiry</label><input id="ecp-exp" inputmode="numeric" placeholder="MM/YY" autocomplete="cc-exp"></div>' +
+        '<div class="ecp-field"><label for="ecp-cvc">CVC</label><input id="ecp-cvc" inputmode="numeric" placeholder="123" autocomplete="cc-csc"></div>' +
+      "</div>"
+    );
+  }
+
+  function planRow(label, amt) {
+    return '<div class="ecp-plan-row"><span>' + esc(label) + "</span><span>" + money(amt) + "</span></div>";
+  }
+
+  function methodTabs() {
+    return (
+      '<div class="ecp-methods">' +
+        '<button type="button" class="ecp-method' + (ui.method === "card" ? " on" : "") + '" data-ecp="method-card">Card</button>' +
+        '<button type="button" class="ecp-method' + (ui.method === "klarna" ? " on" : "") + '" data-ecp="method-klarna"><span class="ecp-klarna-badge">Klarna</span> Pay in 4</button>' +
+      "</div>"
+    );
+  }
+
   function checkoutView() {
-    var live = stripeEnabled();
-    var note = live
-      ? '<p class="ecp-note">Secure payment by Stripe. You will be redirected to complete your purchase.</p>'
-      : '<p class="ecp-note">Demo checkout — no real charge. Use test card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</p>';
-    var form = live
-      ? '<div class="ecp-field"><label for="ecp-email">Email for receipt</label><input id="ecp-email" type="email" placeholder="you@example.com" autocomplete="email"></div>'
-      : (
-        '<div class="ecp-field"><label for="ecp-name">Cardholder name</label><input id="ecp-name" type="text" placeholder="Alex Rider" autocomplete="cc-name"></div>' +
-        '<div class="ecp-field"><label for="ecp-email">Email for receipt</label><input id="ecp-email" type="email" placeholder="you@example.com" autocomplete="email"></div>' +
-        '<div class="ecp-field"><label for="ecp-card">Card number</label><input id="ecp-card" inputmode="numeric" placeholder="4242 4242 4242 4242" autocomplete="cc-number"></div>' +
-        '<div class="ecp-field-row">' +
-          '<div class="ecp-field"><label for="ecp-exp">Expiry</label><input id="ecp-exp" inputmode="numeric" placeholder="MM/YY" autocomplete="cc-exp"></div>' +
-          '<div class="ecp-field"><label for="ecp-cvc">CVC</label><input id="ecp-cvc" inputmode="numeric" placeholder="123" autocomplete="cc-csc"></div>' +
+    var err = ui.error ? '<div class="ecp-error" role="alert">' + esc(ui.error) + "</div>" : "";
+    var summary = '<div class="ecp-summary"><span>' + count() + " item" + (count() === 1 ? "" : "s") + "</span><span>" + money(total()) + "</span></div>";
+    var backBtn = '<button type="button" class="ecp-btn ghost" data-ecp="to-cart"' + (ui.processing ? " disabled" : "") + ">Back to cart</button>";
+
+    if (stripeEnabled()) {
+      return (
+        header("Checkout") +
+        '<div class="ecp-scroll">' + summary +
+          '<p class="ecp-note">Secure payment by Stripe — pay with card, Klarna, and more on the next page.</p>' +
+          '<div class="ecp-field"><label for="ecp-email">Email for receipt</label><input id="ecp-email" type="email" placeholder="you@example.com" autocomplete="email"></div>' +
+          err +
+          '<button type="button" class="ecp-btn" data-ecp="pay"' + (ui.processing ? " disabled" : "") + ">" + (ui.processing ? "Processing…" : "Continue to Stripe") + "</button>" +
+          backBtn +
         "</div>"
       );
-    var err = ui.error ? '<div class="ecp-error" role="alert">' + esc(ui.error) + "</div>" : "";
-    var payLabel = ui.processing ? "Processing…" : (live ? "Continue to Stripe" : "Pay " + money(total()));
+    }
+
+    var body, payLabel, payClass;
+    if (ui.method === "klarna") {
+      var inst = installments();
+      body =
+        '<p class="ecp-note">4 interest-free payments of <strong>' + money(inst[0]) + "</strong>, billed every 2 weeks. 0% interest.</p>" +
+        '<div class="ecp-plan">' +
+          planRow("Today", inst[0]) + planRow("In 2 weeks", inst[1]) + planRow("In 4 weeks", inst[2]) + planRow("In 6 weeks", inst[3]) +
+        "</div>" +
+        '<div class="ecp-field"><label for="ecp-email">Email</label><input id="ecp-email" type="email" placeholder="you@example.com" autocomplete="email"></div>' +
+        '<p class="ecp-note">Demo mode — no real charge. Klarna approval is simulated.</p>';
+      payLabel = ui.processing ? "Processing…" : "Pay in 4 with Klarna";
+      payClass = "ecp-btn klarna";
+    } else {
+      body =
+        '<p class="ecp-note">Demo checkout — no real charge. Use test card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</p>' +
+        cardFields();
+      payLabel = ui.processing ? "Processing…" : "Pay " + money(total());
+      payClass = "ecp-btn";
+    }
+
     return (
       header("Checkout") +
-      '<div class="ecp-scroll">' +
-        '<div class="ecp-summary"><span>' + count() + " item" + (count() === 1 ? "" : "s") + "</span><span>" + money(total()) + "</span></div>" +
-        note + form + err +
-        '<button type="button" class="ecp-btn" data-ecp="pay"' + (ui.processing ? " disabled" : "") + ">" + payLabel + "</button>" +
-        '<button type="button" class="ecp-btn ghost" data-ecp="to-cart"' + (ui.processing ? " disabled" : "") + ">Back to cart</button>" +
+      '<div class="ecp-scroll">' + summary + methodTabs() + body + err +
+        '<button type="button" class="' + payClass + '" data-ecp="pay"' + (ui.processing ? " disabled" : "") + ">" + payLabel + "</button>" +
+        backBtn +
       "</div>"
     );
   }
@@ -212,7 +279,7 @@
       '<div class="ecp-scroll ecp-success">' +
         '<div class="ecp-check" aria-hidden="true">✓</div>' +
         "<h3>Thank you!</h3>" +
-        '<p class="ecp-note">Order <strong>' + esc(o.id) + "</strong> · " + money(o.total) + " paid.</p>" +
+        '<p class="ecp-note">Order <strong>' + esc(o.id) + "</strong> · " + money(o.total) + " paid" + (o.method ? " · " + esc(o.method) : "") + ".</p>" +
         '<p class="ecp-note">A receipt was sent to ' + esc(o.email) + ".</p>" +
         '<button type="button" class="ecp-btn" data-ecp="continue">Continue shopping</button>' +
       "</div>"
@@ -256,6 +323,8 @@
     if (a === "rm") return setQty(el.getAttribute("data-sku"), 0);
     if (a === "to-checkout") { ui.view = "checkout"; ui.error = ""; return render(); }
     if (a === "to-cart") { ui.view = "cart"; ui.error = ""; return render(); }
+    if (a === "method-card") { ui.method = "card"; ui.error = ""; return render(); }
+    if (a === "method-klarna") { ui.method = "klarna"; ui.error = ""; return render(); }
     if (a === "pay") return checkout();
     if (a === "continue" || a === "done") { ui.view = "cart"; return close(); }
   }
@@ -310,6 +379,17 @@
       ".ecp-field-row{display:flex;gap:12px}.ecp-field-row .ecp-field{flex:1}" +
       ".ecp-note{color:#b7b2a8;font-size:.85rem;margin:6px 0}" +
       ".ecp-error{background:rgba(197,18,31,.15);border:1px solid #c1121f;color:#ffd7d7;border-radius:10px;padding:10px 12px;font-size:.85rem;margin:12px 0}" +
+      ".ecp-klarna-badge{display:inline-block;background:#ffb3c7;color:#0c0c0e;font-weight:800;border-radius:6px;padding:1px 7px;font-size:.78rem;letter-spacing:.01em}" +
+      ".ecp-klarna-hint{margin-top:10px;color:#b7b2a8;font-size:.8rem}" +
+      ".ecp-methods{display:flex;gap:10px;margin:14px 0}" +
+      ".ecp-method{flex:1;padding:12px;border-radius:12px;border:1px solid #2a2a30;background:#0f0f12;color:#f4f1ea;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}" +
+      ".ecp-method.on{border-color:#c1121f;background:#1c1c22}" +
+      ".ecp-plan{margin:12px 0;border:1px solid #2a2a30;border-radius:12px;overflow:hidden}" +
+      ".ecp-plan-row{display:flex;justify-content:space-between;padding:11px 13px;border-bottom:1px solid #2a2a30;color:#b7b2a8}" +
+      ".ecp-plan-row:last-child{border-bottom:0}" +
+      ".ecp-plan-row:first-child{color:#f4f1ea;font-weight:700}" +
+      ".ecp-btn.klarna{background:#ffb3c7;color:#0c0c0e}" +
+      ".ecp-btn.klarna:hover{background:#ff9fb9}" +
       ".ecp-empty{text-align:center;color:#b7b2a8;padding:30px 0}" +
       ".ecp-success{text-align:center}" +
       ".ecp-check{width:64px;height:64px;border-radius:50%;background:#1e7f4f;color:#fff;font-size:2rem;line-height:64px;margin:6px auto 10px}" +
