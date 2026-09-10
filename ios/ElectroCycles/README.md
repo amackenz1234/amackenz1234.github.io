@@ -4,7 +4,7 @@ Native SwiftUI catalog app for the Electro Cycles Ontario shop.
 
 ## Requirements
 
-- macOS with Xcode 15+
+- macOS 27 RC with Xcode 27+
 - iOS 17.0+ simulator or device
 
 ## Open & run
@@ -28,8 +28,9 @@ Native SwiftUI catalog app for the Electro Cycles Ontario shop.
 
 ## Continuous integration
 
-Every push and pull request that touches `ios/` builds the app on a free GitHub-hosted
-macOS runner (a "virtual Mac") via [`.github/workflows/ios.yml`](../../.github/workflows/ios.yml).
+Every push and pull request that touches `ios/` builds the app on a cloud
+Apple Silicon Mac (GitHub-hosted `xcode-27` on macOS 27 RC with Xcode 27) via
+[`.github/workflows/ios.yml`](../../.github/workflows/ios.yml).
 The workflow runs `xcodebuild` against the shared `ElectroCycles` scheme for an iOS
 Simulator destination with code signing disabled, so it needs no Apple developer account.
 
