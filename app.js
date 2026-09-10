@@ -59,6 +59,11 @@
     appleAuthPass: "",
     appleAuthCode: "",
     appleAuthText: false,
+    appleAuthToken: "",
+    appleAuthLast4: "",
+    appleAuthPhone: (function () {
+      try { return localStorage.getItem("nativ.applePhone") || ""; } catch (e) { return ""; }
+    })(),
     appleAuthBusy: false,
     appleAuthed: false,
     appleId: (savedAccount && savedAccount.appleId) || "",
@@ -625,15 +630,19 @@
     if (!state.appleAuthOpen) return "";
     var body;
     if (state.appleAuthStep === 1) {
+      var last4 = state.appleAuthLast4 || "••••";
       var deliver = state.appleAuthText
-        ? 'A verification code was sent by <strong>text message</strong> to your trusted phone number ending in \u2022\u20224.'
-        : "Enter the 6-digit verification code sent to your other Apple devices.";
+        ? 'A verification code was sent by <strong>text message</strong> to your phone number ending in \u2022\u2022' + esc(last4) + "."
+        : "Enter the 6-digit verification code sent by text message to your phone.";
       body =
         '<p class="aa-sub">Two-Factor Authentication</p>' +
         '<p class="aa-text">' + deliver + "</p>" +
+        (!state.appleAuthText
+          ? '<div class="aa-field"><input id="apple-auth-phone" type="tel" autocomplete="tel" placeholder="Phone number" value="' + esc(state.appleAuthPhone) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>"
+          : "") +
         '<div class="aa-field"><input id="apple-auth-code" inputmode="numeric" maxlength="6" placeholder="Verification code" value="' + esc(state.appleAuthCode) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>" +
         '<button type="button" class="aa-link" data-action="apple-auth-text"' + (state.appleAuthBusy ? " disabled" : "") + ">" +
-          (state.appleAuthText ? "Resend code by text message" : "Didn\u2019t get a code? Send by text message") +
+          (state.appleAuthText ? "Resend code by text message" : "Send verification code by text message") +
         "</button>";
     } else {
       body =
@@ -815,12 +824,23 @@
     }, ms || 2200);
   }
 
+  function authConfig() {
+    return (typeof window !== "undefined" && window.NATIV_AUTH_CONFIG) || {};
+  }
+
+  function smsEndpoint() {
+    var cfg = authConfig();
+    return (cfg.smsEndpoint || "").replace(/\/$/, "");
+  }
+
   function openAppleAuth() {
     state.appleAuthOpen = true;
     state.appleAuthStep = 0;
     state.appleAuthBusy = false;
     state.appleAuthCode = "";
     state.appleAuthText = false;
+    state.appleAuthToken = "";
+    state.appleAuthLast4 = "";
     render();
   }
 
@@ -830,11 +850,54 @@
     render();
   }
 
+  function rememberPhone(phone) {
+    state.appleAuthPhone = phone || "";
+    try { localStorage.setItem("nativ.applePhone", state.appleAuthPhone); } catch (e) {}
+  }
+
   function sendAppleAuthText() {
     if (state.appleAuthBusy) return;
-    state.appleAuthText = true;
+    var endpoint = smsEndpoint();
+    if (!endpoint) {
+      showToast("SMS is not configured. Set smsEndpoint in auth-config.js.");
+      return;
+    }
+    var phoneEl = document.getElementById("apple-auth-phone");
+    if (phoneEl) rememberPhone((phoneEl.value || "").trim());
+    if (!state.appleAuthPhone && !authConfig().phone) {
+      showToast("Enter your phone number to receive the code.");
+      return;
+    }
+    var phone = state.appleAuthPhone || authConfig().phone || "";
+    state.appleAuthBusy = true;
     render();
-    showToast("Verification code sent by text message");
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "send", phone: phone })
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok || !data || !data.ok) {
+            throw new Error((data && data.error) || "Could not send text message");
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        state.appleAuthBusy = false;
+        state.appleAuthText = true;
+        state.appleAuthToken = data.token || "";
+        state.appleAuthLast4 = data.last4 || "";
+        state.appleAuthCode = "";
+        render();
+        showToast("Verification code sent by text message");
+      })
+      .catch(function (err) {
+        state.appleAuthBusy = false;
+        render();
+        showToast(err.message || "Could not send text message");
+      });
   }
 
   function runAppleAuth() {
@@ -859,9 +922,17 @@
         state.appleAuthBusy = false;
         state.appleAuthStep = 1;
         state.appleAuthCode = "";
+        state.appleAuthText = false;
+        state.appleAuthToken = "";
+        state.appleAuthLast4 = "";
         render();
-        showToast("Verification code sent to your Apple devices");
-      }, 800);
+        // Auto-send when we already know the user's number; otherwise they enter it on this step.
+        if (state.appleAuthPhone || (typeof window !== "undefined" && window.NATIV_AUTH_CONFIG && window.NATIV_AUTH_CONFIG.phone)) {
+          sendAppleAuthText();
+        } else {
+          showToast("Enter your phone number to receive a verification text.");
+        }
+      }, 400);
       return;
     }
 
@@ -871,18 +942,50 @@
       showToast("Enter the 6-digit verification code.");
       return;
     }
+    if (!state.appleAuthToken) {
+      showToast("Send the text message code first.");
+      return;
+    }
+    var endpoint = smsEndpoint();
+    if (!endpoint) {
+      showToast("SMS is not configured. Set smsEndpoint in auth-config.js.");
+      return;
+    }
     state.appleAuthBusy = true;
     render();
-    setTimeout(function () {
-      state.appleAuthBusy = false;
-      state.appleAuthOpen = false;
-      state.appleAuthed = true;
-      state.appleId = state.appleAuthEmail;
-      state.appleAuthPass = "";
-      state.appleAuthCode = "";
-      render();
-      showToast("Signed in with Apple");
-    }, 800);
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "verify",
+        code: state.appleAuthCode,
+        token: state.appleAuthToken
+      })
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok || !data || !data.ok) {
+            throw new Error((data && (data.error || data.message)) || "Incorrect verification code");
+          }
+          return data;
+        });
+      })
+      .then(function () {
+        state.appleAuthBusy = false;
+        state.appleAuthOpen = false;
+        state.appleAuthed = true;
+        state.appleId = state.appleAuthEmail;
+        state.appleAuthPass = "";
+        state.appleAuthCode = "";
+        state.appleAuthToken = "";
+        render();
+        showToast("Signed in with Apple");
+      })
+      .catch(function (err) {
+        state.appleAuthBusy = false;
+        render();
+        showToast(err.message || "Incorrect verification code");
+      });
   }
 
   function openLinkModal(thenSubmit) {
