@@ -1,9 +1,11 @@
-const CACHE = "nativ-v5";
+const CACHE = "nativ-v6";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./plan-config.js",
+  "./mac-config.js",
   "./icon.svg",
   "./manifest.webmanifest"
 ];

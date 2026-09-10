@@ -27,8 +27,8 @@ function cats() {
 function render() {
   var items = filtered();
   var html = "";
-  html += "<header><div class='wrap nav'><a class='brand' href='#top'>Electro <span>Cycles</span></a><a class='btn' href='tel:9053085392'>Call</a></div></header>";
-  html += "<section class='hero' id='top'><div class='wrap'><div class='tag'>Ontario dealer</div><h1>Ride farther.</h1><p class='lede'>E-bikes, scooters, mobility, and gear.</p><a class='btn' href='#shop'>Shop inventory</a></div></section>";
+  html += "<header><div class='wrap nav'><a class='brand' href='#top'>Faraday <span>Rides</span></a><a class='btn' href='tel:9053085392'>Call</a></div></header>";
+  html += "<section class='hero' id='top'><div class='wrap'><div class='tag'>Ontario electric</div><h1>Ride farther.</h1><p class='lede'>E-bikes, scooters, mobility, and gear.</p><a class='btn' href='#shop'>Shop inventory</a></div></section>";
   html += "<section class='section' id='shop'><div class='wrap'><div class='row' id='cats'>";
   cats().forEach(function (c) {
     html += "<button class='chip" + (c === state.cat ? " on" : "") + "' data-cat='" + esc(c) + "'>" + esc(c) + "</button>";
@@ -45,8 +45,8 @@ function render() {
     html += "</div></article>";
   });
   html += "</div></div></section>";
-  html += "<section class='section' id='contact'><div class='wrap'><h2>Visit or call</h2><p class='lede'>905-308-5392</p><a class='ghost' href='mailto:info@electrocycles.ca'>Email the shop</a></div></section>";
-  html += "<footer><div class='wrap'>Electro Cycles</div></footer>";
+  html += "<section class='section' id='contact'><div class='wrap'><h2>Visit or call</h2><p class='lede'>905-308-5392</p><a class='ghost' href='mailto:hello@faradayrides.ca'>Email the shop</a></div></section>";
+  html += "<footer><div class='wrap'>Faraday</div></footer>";
   html += "<div class='dock'><a class='shop' href='#shop'>Shop</a><a class='call' href='tel:9053085392'>Call</a></div>";
   if (state.open) {
     var o = state.open;
@@ -55,7 +55,7 @@ function render() {
     var buyBtn = buyUrl ? "<a class='btn' href='" + esc(buyUrl) + "'>Buy now</a>" : "";
     html += "<div class='modal' id='modal'><div class='sheet' id='sheet'>";
     if (o.image) html += "<img src='" + esc(o.image) + "' alt='" + esc(o.name) + "'>";
-    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'>" + buyBtn + (o.qty > 0 ? "<button class='" + (buyUrl ? "ghost" : "btn") + "' data-add-sku='" + esc(o.sku) + "'>Add to cart</button>" : "") + "<a class='ghost' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
+    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'>" + buyBtn + (o.qty > 0 ? "<button class='" + (buyUrl ? "ghost" : "btn") + "' data-add-sku='" + esc(o.sku) + "'>Add to cart</button>" : "") + "<a class='ghost' href='mailto:hello@faradayrides.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
   }
   document.getElementById("root").innerHTML = html;
   document.getElementById("cats").onclick = function (e) {

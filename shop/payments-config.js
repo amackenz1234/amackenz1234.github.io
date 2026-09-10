@@ -1,4 +1,4 @@
-// Payment configuration for the Electro Cycles storefront.
+// Payment configuration for the Faraday storefront.
 //
 // The checkout works out of the box in DEMO mode (no real charges) using the
 // Stripe test card 4242 4242 4242 4242.
@@ -28,13 +28,13 @@ window.PAYMENTS_CONFIG = {
   // Option B: client-only Stripe Checkout.
   stripePublishableKey: "",
   prices: {
-    // "EC-BANDIT": "price_123",
+    // "FD-BANDIT": "price_123",
     // "STG25001": "price_456",
   },
 
   // Option C: Stripe Payment Link URL per SKU (https://buy.stripe.com/...).
   paymentLinks: {
-    // "EC-BANDIT": "https://buy.stripe.com/xxxxxxxx",
+    // "FD-BANDIT": "https://buy.stripe.com/xxxxxxxx",
     // "STG25001": "https://buy.stripe.com/xxxxxxxx",
     // "EZN25001": "https://buy.stripe.com/xxxxxxxx",
     // "SRR25001": "https://buy.stripe.com/xxxxxxxx",
@@ -42,8 +42,8 @@ window.PAYMENTS_CONFIG = {
     // "ETR24001": "https://buy.stripe.com/xxxxxxxx",
     // "ATM24001": "https://buy.stripe.com/xxxxxxxx",
     // "ATM25001": "https://buy.stripe.com/xxxxxxxx",
-    // "EC-COVER": "https://buy.stripe.com/xxxxxxxx",
-    // "EC-CHAIN": "https://buy.stripe.com/xxxxxxxx",
-    // "EC-HELMET": "https://buy.stripe.com/xxxxxxxx",
+    // "FD-COVER": "https://buy.stripe.com/xxxxxxxx",
+    // "FD-CHAIN": "https://buy.stripe.com/xxxxxxxx",
+    // "FD-HELMET": "https://buy.stripe.com/xxxxxxxx",
   },
 };

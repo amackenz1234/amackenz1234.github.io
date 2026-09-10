@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "electro-cycles": {
+    "faraday": {
       "command": "node",
-      "args": ["${workspaceFolder}/mcp/electro-cycles/src/index.js"]
+      "args": ["${workspaceFolder}/mcp/faraday/src/index.js"]
     }
   }
 }
