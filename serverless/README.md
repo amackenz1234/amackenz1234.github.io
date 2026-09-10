@@ -47,6 +47,11 @@ with `Authorization: Bearer <STRIPE_SECRET_KEY>`, and return `{ url }`.
 
 ## Apple account SMS verification
 
+Nativ’s GitHub Pages site uses a **built-in browser OTP** by default
+(`sms-otp.js` + empty `smsEndpoint` in `auth-config.js`), so linking is
+always configured without a backend. For real carrier SMS, deploy the worker
+below and set `smsEndpoint`.
+
 Nativ can text a real 6-digit code to your phone when linking an Apple Developer
 account. The worker is [`apple-sms.mjs`](./apple-sms.mjs).
 

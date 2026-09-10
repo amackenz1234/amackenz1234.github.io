@@ -1,0 +1,10 @@
+name = "nativ-apple-sms"
+main = "./apple-sms.mjs"
+compatibility_date = "2024-09-01"
+
+# For real carrier SMS, remove MOCK_SMS and set secrets:
+#   TRUSTED_PHONE, OTP_SECRET, SMS_API_KEY, SMS_FROM
+[vars]
+MOCK_SMS = "1"
+INCLUDE_CODE = "1"
+ALLOW_REQUEST_PHONE = "1"
