@@ -16,6 +16,11 @@
 // Option B (no backend, if your Stripe account supports client-only Checkout):
 //   Set stripePublishableKey and a per-SKU `prices` map. Checkout then uses
 //   Stripe.js redirectToCheckout directly.
+//
+// Option C (no backend, no keys shared) — Stripe Payment Links:
+//   Create a Payment Link per product in the Stripe Dashboard (Payment Links)
+//   and paste each product's URL below under `paymentLinks`. Products with a
+//   link get a real "Buy now" button that opens Stripe's hosted checkout.
 window.PAYMENTS_CONFIG = {
   // Option A: URL of your deployed Checkout Session function (leave empty to disable).
   checkoutEndpoint: "",
@@ -25,5 +30,20 @@ window.PAYMENTS_CONFIG = {
   prices: {
     // "EC-BANDIT": "price_123",
     // "STG25001": "price_456",
+  },
+
+  // Option C: Stripe Payment Link URL per SKU (https://buy.stripe.com/...).
+  paymentLinks: {
+    // "EC-BANDIT": "https://buy.stripe.com/xxxxxxxx",
+    // "STG25001": "https://buy.stripe.com/xxxxxxxx",
+    // "EZN25001": "https://buy.stripe.com/xxxxxxxx",
+    // "SRR25001": "https://buy.stripe.com/xxxxxxxx",
+    // "VLR24001": "https://buy.stripe.com/xxxxxxxx",
+    // "ETR24001": "https://buy.stripe.com/xxxxxxxx",
+    // "ATM24001": "https://buy.stripe.com/xxxxxxxx",
+    // "ATM25001": "https://buy.stripe.com/xxxxxxxx",
+    // "EC-COVER": "https://buy.stripe.com/xxxxxxxx",
+    // "EC-CHAIN": "https://buy.stripe.com/xxxxxxxx",
+    // "EC-HELMET": "https://buy.stripe.com/xxxxxxxx",
   },
 };
