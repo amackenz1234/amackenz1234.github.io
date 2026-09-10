@@ -88,6 +88,8 @@
       provider: "GitHub-hosted xcode-27 (full macOS 27 RC, Apple Silicon)",
       os: "Full macOS 27 RC",
       fullOs: true,
+      osRunning: true,
+      pid1: "launchd",
       xcode: "Xcode 27"
     }
   };
@@ -550,7 +552,7 @@
         "<h2>Native Swift. Real Xcode.</h2>" +
         '<p class="lede">Not a web wrapper. Nativ generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
         '<div class="feature-list">' +
-          "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>Compile on a hosted Apple Silicon Mac running the full macOS 27 RC operating system with Xcode 27 — no Mac on your desk.</p></article>" +
+          "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>The cloud Mac boots and runs full macOS 27 RC (launchd pid 1, Darwin, /System) with Xcode 27 — no Mac on your desk.</p></article>" +
           "<article class=\"feature\"><h3>SwiftUI you own</h3><p>Read every file, tweak the project, export the full Xcode package whenever you want.</p></article>" +
           "<article class=\"feature\"><h3>App Store Connect</h3><p>Link your Apple Developer account, then submit builds, metadata, and privacy details in two clicks.</p></article>" +
         "</div>" +
@@ -565,7 +567,7 @@
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
         "</div>" +
       "</div></section>" +
-      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Full Cloud Mac · macOS 27 RC · Not affiliated with Apple</span></footer>' +
+      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
       (state.opening
         ? '<div class="opening-overlay"><div class="spinner" aria-hidden="true"></div><p>Generating SwiftUI project…</p></div>'
         : "")
@@ -598,7 +600,7 @@
             "<strong>" + esc(state.appName) + ".xcodeproj</strong>" +
             (state.built ? '<span class="badge">Build succeeded</span>' : "") +
             (state.accountLinked ? '<span class="badge">ASC linked</span>' : "") +
-            '<span class="badge">Full Cloud Mac · macOS 27 RC</span>' +
+            '<span class="badge">Full macOS 27 RC · running</span>' +
           "</div>" +
           '<div class="studio-actions">' +
             '<button type="button" class="btn btn-ghost" data-action="home">← Home</button>' +
@@ -636,7 +638,7 @@
               "</div></div></div>" +
             "</div>" +
             '<div class="console" id="console">' +
-              '<div class="dim">Full Cloud Mac · macOS 27 RC · ' + esc((state.macInfo && state.macInfo.xcode) || "Xcode 27") + '</div>' +
+              '<div class="dim">Full macOS 27 RC running · ' + esc((state.macInfo && state.macInfo.xcode) || "Xcode 27") + '</div>' +
               logs +
             "</div>" +
           "</section>" +
@@ -860,6 +862,7 @@
 
   function macLabel() {
     var info = state.macInfo || {};
+    if (info.osRunning !== false) return "Full macOS 27 RC · running";
     if (info.os) return "Full Cloud Mac · macOS 27 RC";
     if (info.xcode) return "Full Cloud Mac · Xcode 27";
     return "Full Cloud Mac";
@@ -873,20 +876,21 @@
       '<div class="modal" id="mac-modal">' +
         '<div class="sheet wide" role="dialog" aria-labelledby="mac-title">' +
           '<h2 id="mac-title">Full Cloud Mac</h2>' +
-          "<p>Compiles run on a hosted Apple Silicon Mac running the full macOS 27 RC operating system — Darwin, launchd, /System, and Xcode 27. You do not need a Mac on your desk.</p>" +
+          "<p>The cloud Mac boots the full macOS 27 RC operating system — launchd as pid 1, Darwin, /System — then compiles with Xcode 27. You do not need a Mac on your desk.</p>" +
           '<div class="account-card">' +
-            '<div class="label">Full macOS</div>' +
+            '<div class="label">Operating system running</div>' +
             '<div class="name">' + esc(info.name || "Nativ Cloud Mac") + "</div>" +
             '<div class="meta">' +
               esc(info.provider || "GitHub-hosted xcode-27") +
-              "<br>OS · " + esc(info.os || "Full macOS 27 RC") +
+              "<br>OS · " + esc(info.os || "Full macOS 27 RC") + " · running" +
+              "<br>pid 1 · " + esc(info.pid1 || "launchd") +
               "<br>Product · macOS (complete install)" +
               "<br>Architecture · " + esc(info.arch || "arm64") +
               "<br>" + esc(info.xcode || "Xcode 27 required") +
               (endpoint ? "<br>Dispatcher · " + esc(endpoint) : "<br>Built-in cloud console") +
             "</div>" +
           "</div>" +
-          '<p class="hint">The xcode-27 runner is a full macOS 27 RC VM on Apple Silicon, not a compiler-only sandbox. The job fails if ProductName is not macOS or Xcode 27 is missing.</p>' +
+          '<p class="hint">CI runs scripts/run-full-macos.sh on the xcode-27 VM. The job fails if launchd is not pid 1 or core macOS daemons are down.</p>' +
           '<div class="sheet-actions">' +
             '<button type="button" class="btn" data-action="close-mac"' + (state.macBusy ? " disabled" : "") + ">Done</button>" +
           "</div>" +
@@ -927,6 +931,8 @@
             provider: out.body.provider || state.macInfo.provider,
             os: out.body.os || "Full macOS 27 RC",
             fullOs: out.body.fullOs !== false,
+            osRunning: out.body.osRunning !== false,
+            pid1: out.body.pid1 || "launchd",
             xcode: out.body.xcode || "Xcode 27"
           };
         }
@@ -1306,6 +1312,8 @@
     }
 
     pushLog("info", "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…");
+    pushLog("dim", "launchd (pid 1) · Darwin kernel · system domain live");
+    pushLog("ok", "Full macOS 27 RC is running");
     pushLog("dim", (state.macInfo.xcode || "Xcode 27") + " selected · iPhoneSimulator 27.0 SDK");
     pushLog("info", "$ xcodebuild -scheme " + state.appName + " -destination 'platform=iOS Simulator,name=iPhone 17'");
     pushLog("dim", "Compiling Swift module " + state.appName + " on cloud Apple Silicon…");

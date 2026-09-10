@@ -109,9 +109,11 @@ VM running the complete **macOS 27 RC** operating system with Xcode 27.
 You do not need a Mac on your desk.
 
 The workflow [`.github/workflows/ios.yml`](../.github/workflows/ios.yml) selects
-Xcode, then runs [`scripts/require-cloud-xcode.sh`](../scripts/require-cloud-xcode.sh)
-and fails the job if the runner is not a full macOS 27 install (Darwin, ProductName
-macOS, SystemVersion.plist, launchctl), not arm64, or missing Xcode 27.
+Xcode, then runs [`scripts/run-full-macos.sh`](../scripts/run-full-macos.sh)
+(which calls [`scripts/require-cloud-xcode.sh`](../scripts/require-cloud-xcode.sh)).
+The job fails unless the VM is a *running* full macOS 27 install: Darwin,
+ProductName macOS, `launchd` as pid 1, live system domain, core daemons, arm64,
+and Xcode 27.
 
 ### Optional dispatcher (real Actions job from the browser)
 

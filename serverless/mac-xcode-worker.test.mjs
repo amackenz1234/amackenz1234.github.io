@@ -5,6 +5,7 @@ import {
   requireXcode,
   requireMacOS27,
   requireFullMacOS,
+  requireOsRunning,
   inspectHost,
   cloudMacInfo,
   buildWorkflowDispatchUrl,
@@ -42,6 +43,12 @@ test("requireFullMacOS requires the complete macOS product, not iOS", () => {
   assert.equal(requireFullMacOS({ os: "macOS 27 RC", fullOs: false }).ok, false);
 });
 
+test("requireOsRunning requires launchd as pid 1", () => {
+  assert.equal(requireOsRunning({ os: "Full macOS 27 RC", productName: "macOS", pid1: "launchd" }).ok, true);
+  assert.equal(requireOsRunning({ os: "Full macOS 27 RC", productName: "macOS", osRunning: false }).ok, false);
+  assert.equal(requireOsRunning({ os: "Full macOS 27 RC", productName: "macOS", pid1: "init" }).ok, false);
+});
+
 test("inspectHost describes a cloud Apple Silicon Mac with Xcode", () => {
   const host = inspectHost({
     cloud: true,
@@ -75,6 +82,8 @@ test("cloudMacInfo is always cloud + Apple Silicon + Xcode", async () => {
   assert.match(host.os, /Full macOS 27 RC/);
   assert.equal(host.fullOs, true);
   assert.equal(host.productName, "macOS");
+  assert.equal(host.osRunning, true);
+  assert.equal(host.pid1, "launchd");
 });
 
 test("workflow dispatch URL and body", () => {

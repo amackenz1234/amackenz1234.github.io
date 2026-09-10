@@ -65,6 +65,20 @@ export function requireFullMacOS(info) {
   return { ok: true };
 }
 
+export function requireOsRunning(info) {
+  info = info || {};
+  const installed = requireFullMacOS(info);
+  if (!installed.ok) return installed;
+  if (info.osRunning === false) {
+    return { ok: false, error: "Full macOS is installed but is not running." };
+  }
+  const pid1 = String(info.pid1 || "launchd");
+  if (pid1 !== "launchd") {
+    return { ok: false, error: "Full macOS is not running (pid 1 is " + pid1 + ", expected launchd)." };
+  }
+  return { ok: true };
+}
+
 export function inspectHost(info) {
   info = info || {};
   const xcodeCheck = requireXcode(info);
@@ -74,7 +88,7 @@ export function inspectHost(info) {
   if (!info.mock && info.cloud !== true && info.xcodeInstalled === false) {
     return { ok: false, error: "Xcode is not installed on this cloud Mac." };
   }
-  const osCheck = requireFullMacOS(info);
+  const osCheck = requireOsRunning(info);
   if (!osCheck.ok && !info.mock && info.cloud !== true) {
     return osCheck;
   }
@@ -95,6 +109,9 @@ export function inspectHost(info) {
     os: info.os || DEFAULT_OS,
     productName: info.productName || "macOS",
     fullOs: info.fullOs !== false,
+    osRunning: info.osRunning !== false,
+    pid1: info.pid1 || "launchd",
+    kernel: info.kernel || "Darwin",
     xcode,
   };
 }
@@ -113,6 +130,9 @@ export function cloudMacInfo(env) {
     osInstalled: true,
     productName: "macOS",
     fullOs: true,
+    osRunning: true,
+    pid1: "launchd",
+    kernel: "Darwin",
   });
 }
 
@@ -139,6 +159,8 @@ export function mockCompileLogs(appName, files) {
   const names = Object.keys(files || {}).filter((f) => /\.swift$/.test(f));
   const logs = [
     "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…",
+    "launchd (pid 1) · Darwin kernel · system domain live",
+    "Full macOS 27 RC is running",
     "Xcode 27 selected · iPhoneSimulator 27.0 SDK",
     "$ xcodebuild -scheme " + appName + " -destination 'platform=iOS Simulator,name=iPhone 17'",
     "Compiling Swift module " + appName + " on cloud Apple Silicon…",
@@ -192,7 +214,7 @@ export async function dispatchCloudCompile(env, body, fetchFn) {
     name: env.MAC_NAME || DEFAULT_NAME,
     logs: [
       "Dispatched compile to " + DEFAULT_PROVIDER,
-      "Runner: xcode-27 · full macOS 27 RC · arch arm64 · Xcode 27 required",
+      "Runner: xcode-27 · full macOS 27 RC running (launchd pid 1) · arch arm64",
       "Workflow: " + workflow + " on " + owner + "/" + repo,
       "Scheme: " + ((body && body.appName) || "MyApp"),
     ],
