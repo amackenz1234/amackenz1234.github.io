@@ -4,6 +4,7 @@ import {
   authorize,
   requireXcode,
   requireMacOS27,
+  requireFullMacOS,
   inspectHost,
   cloudMacInfo,
   buildWorkflowDispatchUrl,
@@ -29,9 +30,16 @@ test("requireXcode fails when Xcode is missing", () => {
 
 test("requireMacOS27 accepts 27 RC and rejects older OS", () => {
   assert.equal(requireMacOS27({ os: "macOS 27 RC" }).ok, true);
+  assert.equal(requireMacOS27({ os: "Full macOS 27 RC" }).ok, true);
   assert.equal(requireMacOS27({ osVersion: "27.0" }).ok, true);
   assert.equal(requireMacOS27({ os: "macOS 26.5.2" }).ok, false);
   assert.equal(requireMacOS27({ osInstalled: false }).ok, false);
+});
+
+test("requireFullMacOS requires the complete macOS product, not iOS", () => {
+  assert.equal(requireFullMacOS({ os: "Full macOS 27 RC", productName: "macOS" }).ok, true);
+  assert.equal(requireFullMacOS({ os: "macOS 27 RC", productName: "iOS" }).ok, false);
+  assert.equal(requireFullMacOS({ os: "macOS 27 RC", fullOs: false }).ok, false);
 });
 
 test("inspectHost describes a cloud Apple Silicon Mac with Xcode", () => {
@@ -64,7 +72,9 @@ test("cloudMacInfo is always cloud + Apple Silicon + Xcode", async () => {
   assert.match(host.xcode, /Xcode/);
   assert.match(host.provider, /xcode-27/);
   assert.match(host.xcode, /Xcode 27/);
-  assert.match(host.os, /macOS 27 RC/);
+  assert.match(host.os, /Full macOS 27 RC/);
+  assert.equal(host.fullOs, true);
+  assert.equal(host.productName, "macOS");
 });
 
 test("workflow dispatch URL and body", () => {
@@ -80,7 +90,7 @@ test("workflow dispatch URL and body", () => {
 test("mock compile logs run on cloud Apple Silicon with Xcode", () => {
   const logs = mockCompileLogs("HabitKit", { "App.swift": "", "Info.plist": "" });
   assert.match(logs[0], /Cloud Mac/);
-  assert.match(logs.join("\n"), /macOS 27 RC/);
+  assert.match(logs.join("\n"), /full macOS 27 RC/);
   assert.match(logs.join("\n"), /Xcode 27/);
   assert.match(logs.join("\n"), /Apple Silicon/);
   assert.match(logs.join("\n"), /Compile App.swift/);

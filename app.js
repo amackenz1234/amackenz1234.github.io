@@ -85,8 +85,9 @@
       silicon: true,
       arch: "arm64",
       name: "Nativ Cloud Mac",
-      provider: "GitHub-hosted xcode-27 (macOS 27 RC, Apple Silicon)",
-      os: "macOS 27 RC",
+      provider: "GitHub-hosted xcode-27 (full macOS 27 RC, Apple Silicon)",
+      os: "Full macOS 27 RC",
+      fullOs: true,
       xcode: "Xcode 27"
     }
   };
@@ -549,7 +550,7 @@
         "<h2>Native Swift. Real Xcode.</h2>" +
         '<p class="lede">Not a web wrapper. Nativ generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
         '<div class="feature-list">' +
-          "<article class=\"feature\"><h3>Cloud Apple Silicon Mac</h3><p>Compile on a hosted arm64 Mac running macOS 27 RC with Xcode 27 — no Mac on your desk.</p></article>" +
+          "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>Compile on a hosted Apple Silicon Mac running the full macOS 27 RC operating system with Xcode 27 — no Mac on your desk.</p></article>" +
           "<article class=\"feature\"><h3>SwiftUI you own</h3><p>Read every file, tweak the project, export the full Xcode package whenever you want.</p></article>" +
           "<article class=\"feature\"><h3>App Store Connect</h3><p>Link your Apple Developer account, then submit builds, metadata, and privacy details in two clicks.</p></article>" +
         "</div>" +
@@ -597,7 +598,7 @@
             "<strong>" + esc(state.appName) + ".xcodeproj</strong>" +
             (state.built ? '<span class="badge">Build succeeded</span>' : "") +
             (state.accountLinked ? '<span class="badge">ASC linked</span>' : "") +
-            '<span class="badge">Cloud Mac · macOS 27 RC</span>' +
+            '<span class="badge">Full Cloud Mac · macOS 27 RC</span>' +
           "</div>" +
           '<div class="studio-actions">' +
             '<button type="button" class="btn btn-ghost" data-action="home">← Home</button>' +
@@ -635,7 +636,7 @@
               "</div></div></div>" +
             "</div>" +
             '<div class="console" id="console">' +
-              '<div class="dim">Nativ Cloud Mac · macOS 27 RC · ' + esc((state.macInfo && state.macInfo.xcode) || "Xcode 27") + '</div>' +
+              '<div class="dim">Full Cloud Mac · macOS 27 RC · ' + esc((state.macInfo && state.macInfo.xcode) || "Xcode 27") + '</div>' +
               logs +
             "</div>" +
           "</section>" +
@@ -859,9 +860,9 @@
 
   function macLabel() {
     var info = state.macInfo || {};
-    if (info.os) return "Cloud Mac · macOS 27 RC";
-    if (info.xcode) return "Cloud Mac · Xcode 27";
-    return "Cloud Mac";
+    if (info.os) return "Full Cloud Mac · macOS 27 RC";
+    if (info.xcode) return "Full Cloud Mac · Xcode 27";
+    return "Full Cloud Mac";
   }
 
   function renderMacModal() {
@@ -871,20 +872,21 @@
     return (
       '<div class="modal" id="mac-modal">' +
         '<div class="sheet wide" role="dialog" aria-labelledby="mac-title">' +
-          '<h2 id="mac-title">Nativ Cloud Mac</h2>' +
-          "<p>Compiles run on a hosted Apple Silicon Mac running macOS 27 RC with Xcode 27. You do not need a Mac on your desk.</p>" +
+          '<h2 id="mac-title">Full Cloud Mac</h2>' +
+          "<p>Compiles run on a hosted Apple Silicon Mac running the full macOS 27 RC operating system — Darwin, launchd, /System, and Xcode 27. You do not need a Mac on your desk.</p>" +
           '<div class="account-card">' +
-            '<div class="label">Cloud compiler</div>' +
+            '<div class="label">Full macOS</div>' +
             '<div class="name">' + esc(info.name || "Nativ Cloud Mac") + "</div>" +
             '<div class="meta">' +
               esc(info.provider || "GitHub-hosted xcode-27") +
-              "<br>OS · " + esc(info.os || "macOS 27 RC") +
+              "<br>OS · " + esc(info.os || "Full macOS 27 RC") +
+              "<br>Product · macOS (complete install)" +
               "<br>Architecture · " + esc(info.arch || "arm64") +
               "<br>" + esc(info.xcode || "Xcode 27 required") +
               (endpoint ? "<br>Dispatcher · " + esc(endpoint) : "<br>Built-in cloud console") +
             "</div>" +
           "</div>" +
-          '<p class="hint">The GitHub-hosted xcode-27 image is Apple Silicon on macOS 27 RC. The workflow fails if macOS 27 or Xcode 27 is missing.</p>' +
+          '<p class="hint">The xcode-27 runner is a full macOS 27 RC VM on Apple Silicon, not a compiler-only sandbox. The job fails if ProductName is not macOS or Xcode 27 is missing.</p>' +
           '<div class="sheet-actions">' +
             '<button type="button" class="btn" data-action="close-mac"' + (state.macBusy ? " disabled" : "") + ">Done</button>" +
           "</div>" +
@@ -923,7 +925,8 @@
             arch: out.body.arch || "arm64",
             name: out.body.name || "Nativ Cloud Mac",
             provider: out.body.provider || state.macInfo.provider,
-            os: out.body.os || "macOS 27 RC",
+            os: out.body.os || "Full macOS 27 RC",
+            fullOs: out.body.fullOs !== false,
             xcode: out.body.xcode || "Xcode 27"
           };
         }
@@ -1302,7 +1305,7 @@
       return;
     }
 
-    pushLog("info", "Provisioning Nativ Cloud Mac (macOS 27 RC, Apple Silicon, arm64)…");
+    pushLog("info", "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…");
     pushLog("dim", (state.macInfo.xcode || "Xcode 27") + " selected · iPhoneSimulator 27.0 SDK");
     pushLog("info", "$ xcodebuild -scheme " + state.appName + " -destination 'platform=iOS Simulator,name=iPhone 17'");
     pushLog("dim", "Compiling Swift module " + state.appName + " on cloud Apple Silicon…");
