@@ -44,3 +44,48 @@ page and charges real cards. Without it, the built-in demo checkout is used.
 `buildSessionParams(items, priceMap, opts)` is exported for Vercel/Netlify Node
 functions — call it, POST the params to `https://api.stripe.com/v1/checkout/sessions`
 with `Authorization: Bearer <STRIPE_SECRET_KEY>`, and return `{ url }`.
+
+## Apple account SMS verification
+
+Nativ can text a real 6-digit code to your phone when linking an Apple Developer
+account. The worker is [`apple-sms.mjs`](./apple-sms.mjs).
+
+### Secrets
+
+- `TRUSTED_PHONE` — your number in E.164 (`+1…`). Codes are only sent here.
+- `OTP_SECRET` — random string used to HMAC-sign verification tokens.
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` — Twilio credentials.
+- Optional: `ALLOW_ORIGIN`, `MOCK_SMS=1` (skip Twilio, log the code), `INCLUDE_CODE=1`
+  (echo the code in JSON when mocking), `ALLOW_REQUEST_PHONE=1` (allow the browser
+  to supply the destination phone — local/dev only).
+
+### Local mock (no Twilio)
+
+```bash
+TRUSTED_PHONE=+15551234567 OTP_SECRET=dev MOCK_SMS=1 INCLUDE_CODE=1 \
+  node serverless/apple-sms-local.mjs
+```
+
+Point [`../auth-config.js`](../auth-config.js) at it:
+
+```js
+window.NATIV_AUTH_CONFIG = {
+  smsEndpoint: "http://127.0.0.1:8787",
+  phone: "+15551234567"
+};
+```
+
+### Deploy (Cloudflare Worker)
+
+```bash
+wrangler secret put TRUSTED_PHONE
+wrangler secret put OTP_SECRET
+wrangler secret put TWILIO_ACCOUNT_SID
+wrangler secret put TWILIO_AUTH_TOKEN
+wrangler secret put TWILIO_FROM
+# entry = apple-sms.mjs
+wrangler deploy
+```
+
+Then set `smsEndpoint` in `auth-config.js` to the worker URL. Leave `phone` empty
+when `TRUSTED_PHONE` is configured on the server — the text always goes to your number.
