@@ -6,15 +6,18 @@
 // Secrets (Worker env):
 //   TRUSTED_PHONE   — E.164 number that receives codes (e.g. +15551234567)
 //   OTP_SECRET      — HMAC secret used to sign verification tokens
-//   TWILIO_ACCOUNT_SID
-//   TWILIO_AUTH_TOKEN
-//   TWILIO_FROM     — Twilio sender number in E.164
+//   SMS_API_URL     — HTTP SMS endpoint (default: Telnyx v2 messages)
+//   SMS_API_KEY     — Bearer API key for the SMS provider
+//   SMS_FROM        — Sender number / alphanumeric sender in E.164 when required
 // Optional:
+//   SMS_PROVIDER    — "telnyx" (default) or "generic"
 //   ALLOW_ORIGIN    — CORS origin (default *)
-//   MOCK_SMS        — if "1", skip Twilio and log the code (local/dev)
+//   MOCK_SMS        — if "1", skip the SMS API and log the code (local/dev)
 //   INCLUDE_CODE    — if "1" (and MOCK_SMS), echo the code in the JSON response
+//   ALLOW_REQUEST_PHONE — if "1", allow the browser to supply the destination
 
 const encoder = new TextEncoder();
+const DEFAULT_TELNYX_URL = "https://api.telnyx.com/v2/messages";
 
 export function normalizePhone(raw) {
   const digits = String(raw || "").replace(/\D/g, "");
@@ -74,16 +77,18 @@ export async function verifyToken(code, token, secret, opts) {
   return { ok: true };
 }
 
-export function buildTwilioBody(to, from, body) {
-  const params = new URLSearchParams();
-  params.set("To", to);
-  params.set("From", from);
-  params.set("Body", body);
-  return params;
-}
-
 export function buildSmsMessage(code) {
   return "Your Nativ Apple verification code is " + code + ". It expires in 10 minutes.";
+}
+
+/** Build the JSON body for Telnyx or a generic HTTP SMS webhook. */
+export function buildSmsPayload(to, from, text, provider) {
+  const kind = (provider || "telnyx").toLowerCase();
+  if (kind === "generic") {
+    return { to: to, from: from, body: text, text: text };
+  }
+  // Telnyx Messages API shape (default — not Twilio).
+  return { from: from, to: to, text: text };
 }
 
 function json(obj, status) {
@@ -100,25 +105,31 @@ function withCors(resp, origin) {
   return resp;
 }
 
-async function sendViaTwilio(env, to, body) {
-  const sid = env.TWILIO_ACCOUNT_SID;
-  const token = env.TWILIO_AUTH_TOKEN;
-  const from = env.TWILIO_FROM;
-  if (!sid || !token || !from) {
-    throw new Error("Server missing TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM");
+export async function sendViaHttpSms(env, to, text) {
+  const apiKey = env.SMS_API_KEY;
+  const from = env.SMS_FROM;
+  const provider = (env.SMS_PROVIDER || "telnyx").toLowerCase();
+  const url = env.SMS_API_URL || (provider === "telnyx" ? DEFAULT_TELNYX_URL : "");
+  if (!apiKey || !from || !url) {
+    throw new Error("Server missing SMS_API_KEY / SMS_FROM / SMS_API_URL");
   }
-  const url = "https://api.twilio.com/2010-04-01/Accounts/" + encodeURIComponent(sid) + "/Messages.json";
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: "Basic " + btoa(sid + ":" + token),
-      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: "Bearer " + apiKey,
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-    body: buildTwilioBody(to, from, body),
+    body: JSON.stringify(buildSmsPayload(to, from, text, provider)),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error((data && data.message) || "Twilio send failed");
+    const errMsg =
+      (data && data.errors && data.errors[0] && data.errors[0].detail) ||
+      (data && data.error && (data.error.message || data.error)) ||
+      (data && data.message) ||
+      "SMS send failed";
+    throw new Error(String(errMsg));
   }
   return data;
 }
@@ -147,7 +158,7 @@ export async function handleSend(env, body) {
   if (env.MOCK_SMS === "1") {
     console.log("[apple-sms] MOCK send to", to, "code", code);
   } else {
-    await sendViaTwilio(env, to, message);
+    await sendViaHttpSms(env, to, message);
   }
 
   const out = { ok: true, token: token, last4: phoneLast4(to) };
