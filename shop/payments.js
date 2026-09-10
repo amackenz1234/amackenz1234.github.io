@@ -144,10 +144,23 @@
     }, 1200);
   }
 
+  function payApplePay() {
+    ui.error = ""; ui.processing = true; render();
+    var paid = total();
+    window.setTimeout(function () {
+      ui.processing = false;
+      ui.order = { id: "EC-" + Date.now().toString(36).toUpperCase().slice(-6), email: "", total: paid, method: "Apple Pay" };
+      ui.view = "success";
+      clearCart();
+      render();
+    }, 1300);
+  }
+
   function checkout() {
     if (!lines().length) return;
     if (stripeEnabled()) return payWithStripe();
     if (ui.method === "klarna") return payKlarna();
+    if (ui.method === "applepay") return payApplePay();
     payDemo();
   }
 
@@ -216,11 +229,14 @@
     return '<div class="ecp-plan-row"><span>' + esc(label) + "</span><span>" + money(amt) + "</span></div>";
   }
 
+  var APPLE_LOGO = '<svg class="ecp-ap-logo" viewBox="0 0 384 512" width="13" height="15" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>';
+
   function methodTabs() {
     return (
       '<div class="ecp-methods">' +
         '<button type="button" class="ecp-method' + (ui.method === "card" ? " on" : "") + '" data-ecp="method-card">Card</button>' +
-        '<button type="button" class="ecp-method' + (ui.method === "klarna" ? " on" : "") + '" data-ecp="method-klarna"><span class="ecp-klarna-badge">Klarna</span> Pay in 4</button>' +
+        '<button type="button" class="ecp-method' + (ui.method === "applepay" ? " on" : "") + '" data-ecp="method-applepay">' + APPLE_LOGO + " Pay</button>" +
+        '<button type="button" class="ecp-method' + (ui.method === "klarna" ? " on" : "") + '" data-ecp="method-klarna"><span class="ecp-klarna-badge">Klarna</span></button>' +
       "</div>"
     );
   }
@@ -255,6 +271,13 @@
         '<p class="ecp-note">Demo mode — no real charge. Klarna approval is simulated.</p>';
       payLabel = ui.processing ? "Processing…" : "Pay in 4 with Klarna";
       payClass = "ecp-btn klarna";
+    } else if (ui.method === "applepay") {
+      body =
+        '<p class="ecp-note">Pay with the card in your Apple Wallet, confirmed with Face ID or Touch ID.</p>' +
+        '<div class="ecp-applepay"><span>' + APPLE_LOGO + " Pay</span><span>" + money(total()) + "</span></div>" +
+        '<p class="ecp-note">Demo mode — no real charge. Apple Pay authorization is simulated.</p>';
+      payLabel = ui.processing ? "Confirming…" : (APPLE_LOGO + " Pay");
+      payClass = "ecp-btn applepay";
     } else {
       body =
         '<p class="ecp-note">Demo checkout — no real charge. Use test card <strong>4242 4242 4242 4242</strong>, any future expiry, any CVC.</p>' +
@@ -280,7 +303,7 @@
         '<div class="ecp-check" aria-hidden="true">✓</div>' +
         "<h3>Thank you!</h3>" +
         '<p class="ecp-note">Order <strong>' + esc(o.id) + "</strong> · " + money(o.total) + " paid" + (o.method ? " · " + esc(o.method) : "") + ".</p>" +
-        '<p class="ecp-note">A receipt was sent to ' + esc(o.email) + ".</p>" +
+        (o.email ? '<p class="ecp-note">A receipt was sent to ' + esc(o.email) + ".</p>" : "") +
         '<button type="button" class="ecp-btn" data-ecp="continue">Continue shopping</button>' +
       "</div>"
     );
@@ -324,6 +347,7 @@
     if (a === "to-checkout") { ui.view = "checkout"; ui.error = ""; return render(); }
     if (a === "to-cart") { ui.view = "cart"; ui.error = ""; return render(); }
     if (a === "method-card") { ui.method = "card"; ui.error = ""; return render(); }
+    if (a === "method-applepay") { ui.method = "applepay"; ui.error = ""; return render(); }
     if (a === "method-klarna") { ui.method = "klarna"; ui.error = ""; return render(); }
     if (a === "pay") return checkout();
     if (a === "continue" || a === "done") { ui.view = "cart"; return close(); }
@@ -381,9 +405,13 @@
       ".ecp-error{background:rgba(197,18,31,.15);border:1px solid #c1121f;color:#ffd7d7;border-radius:10px;padding:10px 12px;font-size:.85rem;margin:12px 0}" +
       ".ecp-klarna-badge{display:inline-block;background:#ffb3c7;color:#0c0c0e;font-weight:800;border-radius:6px;padding:1px 7px;font-size:.78rem;letter-spacing:.01em}" +
       ".ecp-klarna-hint{margin-top:10px;color:#b7b2a8;font-size:.8rem}" +
-      ".ecp-methods{display:flex;gap:10px;margin:14px 0}" +
-      ".ecp-method{flex:1;padding:12px;border-radius:12px;border:1px solid #2a2a30;background:#0f0f12;color:#f4f1ea;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}" +
+      ".ecp-methods{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}" +
+      ".ecp-method{flex:1 1 30%;min-width:88px;padding:12px 8px;border-radius:12px;border:1px solid #2a2a30;background:#0f0f12;color:#f4f1ea;cursor:pointer;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px}" +
       ".ecp-method.on{border-color:#c1121f;background:#1c1c22}" +
+      ".ecp-ap-logo{vertical-align:-2px}" +
+      ".ecp-applepay{display:flex;justify-content:space-between;align-items:center;padding:14px;border:1px solid #2a2a30;border-radius:12px;margin:10px 0;font-weight:800}" +
+      ".ecp-btn.applepay{background:#000;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px}" +
+      ".ecp-btn.applepay:hover{background:#111}" +
       ".ecp-plan{margin:12px 0;border:1px solid #2a2a30;border-radius:12px;overflow:hidden}" +
       ".ecp-plan-row{display:flex;justify-content:space-between;padding:11px 13px;border-bottom:1px solid #2a2a30;color:#b7b2a8}" +
       ".ecp-plan-row:last-child{border-bottom:0}" +
