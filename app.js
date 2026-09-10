@@ -3,13 +3,15 @@
 
   var BRAND = "appcompiler.ai";
   var CLOUD_MAC = "appcompiler.ai Cloud Mac";
+  var ASC_URL = "https://appstoreconnect.apple.com/";
+  var ASC_API_URL = "https://appstoreconnect.apple.com/access/integrations/api";
 
   var EXAMPLES = [
     "A habit tracker with streaks and widgets",
     "A local cafe finder with maps and favorites",
     "A personal finance app with budgets",
     "A meditation timer with Live Activities",
-    "Faraday shop with product catalog"
+    "A reading list with highlights"
   ];
 
   var KW = {
@@ -20,11 +22,6 @@
     where: 1, as: 1, is: 1, try: 1, await: 1, async: 1, throws: 1, override: 1,
     mutating: 1, inout: 1, init: 1, associatedtype: 1, default: 1
   };
-
-  var TEAMS = [
-    { id: "A1B2C3D4E5", name: "Personal Team", role: "Account Holder" },
-    { id: "X9Y8Z7W6V5", name: "appcompiler.ai Demo", role: "Admin" }
-  ];
 
   var savedAccount = null;
   try {
@@ -58,25 +55,9 @@
     linkOpen: false,
     linkMethod: "signin",
     linking: false,
-    linkStep: 0,
-    password: "",
-    otp: "",
-    sentCode: "",
     apiKey: "",
-    appleAuthOpen: false,
-    appleAuthStep: 0,
-    appleAuthEmail: "",
-    appleAuthPass: "",
-    appleAuthCode: "",
-    appleAuthText: false,
-    appleAuthToken: "",
-    appleAuthLast4: "",
-    appleAuthPreviewCode: "",
-    appleAuthPhone: (function () {
-      try { return localStorage.getItem("nativ.applePhone") || ""; } catch (e) { return ""; }
-    })(),
-    appleAuthBusy: false,
     appleAuthed: false,
+    appleAscOpened: false,
     appleId: (savedAccount && savedAccount.appleId) || "",
     teamName: (savedAccount && savedAccount.teamName) || "",
     teamId: (savedAccount && savedAccount.teamId) || "",
@@ -150,7 +131,6 @@
 
   function detectTemplate(prompt) {
     var p = (prompt || "").toLowerCase();
-    if (/faraday|electro|e-?bike|scooter|catalog/.test(p)) return "electro";
     if (/habit|streak/.test(p)) return "habit";
     if (/cafe|coffee|map|finder/.test(p)) return "cafe";
     if (/finance|budget|money/.test(p)) return "finance";
@@ -160,7 +140,6 @@
 
   function deriveName(prompt) {
     var template = detectTemplate(prompt);
-    if (template === "electro") return "Faraday";
     if (template === "habit") return "HabitKit";
     if (template === "cafe") return "CafeFinder";
     if (template === "finance") return "Budgetly";
@@ -204,13 +183,6 @@
         ["Evening wind-down", "8 min"]
       ];
     }
-    if (template === "electro") {
-      return [
-        ["Bandit", "$5,499 · E-Bikes"],
-        ["Stinger Plus", "$4,449 · E-Scooters"],
-        ["Streetster RR", "$8,599 · E-Bikes"]
-      ];
-    }
     return [
       ["Getting started", "Built with appcompiler.ai"],
       ["Your first screen", "Native SwiftUI"],
@@ -227,53 +199,6 @@
       "<string>1.0.0</string>\n" +
       "<key>UILaunchScreen</key>\n" +
       "<dict/>";
-
-    if (template === "electro") {
-      return {
-        "FaradayApp.swift":
-          "import SwiftUI\n\n" +
-          "@main\n" +
-          "struct FaradayApp: App {\n" +
-          "    @State private var store = ShopStore()\n\n" +
-          "    var body: some Scene {\n" +
-          "        WindowGroup {\n" +
-          "            MainTabView()\n" +
-          "                .environment(store)\n" +
-          "                .preferredColorScheme(.dark)\n" +
-          "        }\n" +
-          "    }\n" +
-          "}",
-        "ShopHomeView.swift":
-          "import SwiftUI\n\n" +
-          "struct ShopHomeView: View {\n" +
-          "    @Environment(ShopStore.self) private var store\n\n" +
-          "    var body: some View {\n" +
-          "        NavigationStack {\n" +
-          "            ScrollView {\n" +
-          "                LazyVStack(spacing: 14) {\n" +
-          "                    ForEach(store.products) { product in\n" +
-          "                        ProductCard(product: product)\n" +
-          "                    }\n" +
-          "                }\n" +
-          "                .padding()\n" +
-          "            }\n" +
-          "            .navigationTitle(\"Faraday\")\n" +
-          "        }\n" +
-          "    }\n" +
-          "}",
-        "Product.swift":
-          "import Foundation\n\n" +
-          "struct Product: Identifiable, Hashable {\n" +
-          "    var id: String { sku }\n" +
-          "    var sku: String\n" +
-          "    var name: String\n" +
-          "    var category: String\n" +
-          "    var price: Double\n" +
-          "    var quantity: Int\n" +
-          "}",
-        "Info.plist": plist
-      };
-    }
 
     if (template === "habit") {
       return {
@@ -587,12 +512,12 @@
         '<div class="feature-list">' +
           "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>The cloud Mac boots and runs full macOS 27 RC (launchd pid 1, Darwin, /System) with Xcode 27 — no Mac on your desk.</p></article>" +
           "<article class=\"feature\"><h3>Signed IPA</h3><p>The monthly Cloud Mac plan signs the archive on that Mac and downloads a real .ipa — not an unsigned zip.</p></article>" +
-          "<article class=\"feature\"><h3>App Store Connect</h3><p>Link your Apple Developer account, then submit builds, metadata, and privacy details in two clicks.</p></article>" +
+          "<article class=\"feature\"><h3>App Store Connect</h3><p>Connect your Apple Developer account at appstoreconnect.apple.com, then submit builds, metadata, and privacy details.</p></article>" +
         "</div>" +
       "</div></section>" +
       '<section class="section" id="publish"><div class="wrap">' +
         "<h2>From finished app to App Store review.</h2>" +
-        '<p class="lede">Link App Store Connect with your Apple Developer account. Signing, packaging, and delivery are automated after that. Try the included <a href="./shop/">Faraday sample shop</a>.</p>' +
+        '<p class="lede">Connect your Apple Developer account at <a href="https://appstoreconnect.apple.com/" target="_blank" rel="noopener noreferrer">appstoreconnect.apple.com</a>. Signing, packaging, and delivery are automated after that.</p>' +
         '<div class="prompt-actions publish-actions">' +
           '<button type="button" class="btn btn-ghost" data-action="link-account">' +
             (state.accountLinked ? "Manage Apple Developer" : "Link Apple Developer account") +
@@ -600,7 +525,7 @@
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
         "</div>" +
       "</div></section>" +
-      '<footer class="wrap site-footer"><span>appcompiler.ai · Native iOS with AI</span><span><a href="./shop/">Faraday sample shop</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
+      '<footer class="wrap site-footer"><span>appcompiler.ai · Native iOS with AI</span><span><a href="https://appstoreconnect.apple.com/" target="_blank" rel="noopener noreferrer">App Store Connect</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
       (state.opening
         ? '<div class="opening-overlay"><div class="spinner" aria-hidden="true"></div><p>Generating SwiftUI project…</p></div>'
         : "")
@@ -690,52 +615,6 @@
 
   var APPLE_LOGO = '<svg class="ap-logo" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>';
 
-  function renderAppleAuthModal() {
-    if (!state.appleAuthOpen) return "";
-    var body;
-    if (state.appleAuthStep === 1) {
-      var last4 = state.appleAuthLast4 || "••••";
-      var deliver = state.appleAuthText
-        ? 'A verification code was sent by <strong>text message</strong> to your phone number ending in \u2022\u2022' + esc(last4) + "."
-        : "Enter the 6-digit verification code sent by text message to your phone.";
-      var preview = (state.appleAuthText && state.appleAuthPreviewCode)
-        ? '<p class="aa-text aa-preview">Preview delivery code: <strong>' + esc(state.appleAuthPreviewCode) + "</strong></p>"
-        : "";
-      body =
-        '<p class="aa-sub">Two-Factor Authentication</p>' +
-        '<p class="aa-text">' + deliver + "</p>" +
-        preview +
-        (!state.appleAuthText
-          ? '<div class="aa-field"><input id="apple-auth-phone" type="tel" autocomplete="tel" placeholder="Phone number" value="' + esc(state.appleAuthPhone) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>"
-          : "") +
-        '<div class="aa-field"><input id="apple-auth-code" inputmode="numeric" maxlength="6" placeholder="Verification code" value="' + esc(state.appleAuthCode) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>" +
-        '<button type="button" class="aa-link" data-action="apple-auth-text"' + (state.appleAuthBusy ? " disabled" : "") + ">" +
-          (state.appleAuthText ? "Resend code by text message" : "Send verification code by text message") +
-        "</button>";
-    } else {
-      body =
-        '<p class="aa-text">developer.apple.com wants to use your Apple Account to sign in.</p>' +
-        '<div class="aa-field"><input id="apple-auth-email" type="email" autocomplete="username" placeholder="Apple ID" value="' + esc(state.appleAuthEmail) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>" +
-        '<div class="aa-field"><input id="apple-auth-pass" type="password" autocomplete="current-password" placeholder="Password" value="' + esc(state.appleAuthPass) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>";
-    }
-    return (
-      '<div class="modal aa-modal" id="apple-auth-modal">' +
-        '<div class="aa-sheet" role="dialog" aria-label="Sign in with Apple">' +
-          '<div class="aa-logo">' + APPLE_LOGO + "</div>" +
-          '<h3 class="aa-title">Sign in with Apple</h3>' +
-          body +
-          '<div class="aa-actions">' +
-            '<button type="button" class="btn btn-ghost" data-action="close-apple-auth"' + (state.appleAuthBusy ? " disabled" : "") + ">Cancel</button>" +
-            '<button type="button" class="btn aa-btn" data-action="apple-auth-continue"' + (state.appleAuthBusy ? " disabled" : "") + ">" +
-              (state.appleAuthBusy ? "Signing in…" : state.appleAuthStep === 1 ? "Trust" : "Sign In") +
-            "</button>" +
-          "</div>" +
-          '<p class="aa-foot">Your Apple Account password is entered here on Apple\u2019s screen and is never shared with appcompiler.ai.</p>' +
-        "</div>" +
-      "</div>"
-    );
-  }
-
   function renderLinkModal() {
     if (!state.linkOpen) return "";
 
@@ -746,16 +625,18 @@
             '<h2 id="link-title">App Store Connect</h2>' +
             "<p>Your Apple Developer account is linked for signing and uploads.</p>" +
             '<div class="account-card">' +
-              '<div class="label">Linked account</div>' +
+              '<div class="label">Linked App Store Connect</div>' +
               '<div class="name">' + esc(state.teamName || "Apple Developer") + "</div>" +
               '<div class="meta">' +
-                esc(state.appleId || "API key auth") +
+                esc(state.appleId || "appstoreconnect.apple.com") +
                 (state.teamId ? "<br>Team ID · " + esc(state.teamId) : "") +
                 (state.keyId ? "<br>Key ID · " + esc(state.keyId) : "") +
+                '<br><a href="' + ASC_URL + '" target="_blank" rel="noopener noreferrer">Open App Store Connect</a>' +
               "</div>" +
             "</div>" +
             '<div class="sheet-actions">' +
               '<button type="button" class="btn btn-ghost" data-action="unlink">Unlink</button>' +
+              '<button type="button" class="btn" data-action="open-asc">Open App Store Connect</button>' +
               '<button type="button" class="btn" data-action="close-link">Done</button>' +
             "</div>" +
           "</div>" +
@@ -763,26 +644,24 @@
       );
     }
 
-    var teamOptions = TEAMS.map(function (t) {
-      var selected = state.teamId === t.id ? " selected" : "";
-      return '<option value="' + esc(t.id) + '"' + selected + ">" + esc(t.name + " · " + t.id) + "</option>";
-    }).join("");
-
     var signinFields;
-    if (state.appleAuthed) {
+    if (state.appleAscOpened || state.appleAuthed) {
       signinFields =
         '<div class="account-card">' +
-          '<div class="label">Signed in with Apple</div>' +
-          '<div class="name">' + esc(state.appleId) + "</div>" +
-          '<div class="meta">developer.apple.com · authorized</div>' +
+          '<div class="label">App Store Connect</div>' +
+          '<div class="name">appstoreconnect.apple.com</div>' +
+          '<div class="meta">Sign in with your Apple Developer account on Apple\u2019s site, then add your Team ID.</div>' +
         "</div>" +
+        '<div class="field"><label for="signin-apple-id">Apple ID</label>' +
+          '<input id="signin-apple-id" type="email" autocomplete="username" placeholder="you@example.com" value="' + esc(state.appleId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
         '<div class="field"><label for="signin-team-id">App Store Connect Team ID</label>' +
           '<input id="signin-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-        '<p class="hint">Find your 10-character Team ID in App Store Connect under Membership.</p>';
+        '<p class="hint">Team ID is under <a href="' + ASC_URL + '" target="_blank" rel="noopener noreferrer">App Store Connect</a> → Users and Access → Membership.</p>' +
+        '<button type="button" class="btn btn-ghost" data-action="open-asc">Reopen App Store Connect</button>';
     } else {
       signinFields =
-        '<button type="button" class="btn apple-signin" data-action="apple-signin"' + (state.linking ? " disabled" : "") + ">" + APPLE_LOGO + " Sign in with Apple</button>" +
-        '<p class="hint">Sign in with Apple to authorize appcompiler.ai to link your developer.apple.com account. Your password is entered on Apple\u2019s screen, never in appcompiler.ai.</p>';
+        '<button type="button" class="btn apple-signin" data-action="open-asc"' + (state.linking ? " disabled" : "") + ">" + APPLE_LOGO + " Continue on App Store Connect</button>" +
+        '<p class="hint">This opens <a href="' + ASC_URL + '" target="_blank" rel="noopener noreferrer">appstoreconnect.apple.com</a>. Sign in with your Apple Developer account there. appcompiler.ai never asks for your Apple password.</p>';
     }
 
     var apiFields =
@@ -794,25 +673,25 @@
         '<input id="api-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
       '<div class="field"><label for="api-key">API key (.p8)</label>' +
         '<textarea id="api-key" rows="4" placeholder="-----BEGIN PRIVATE KEY-----&#10;…&#10;-----END PRIVATE KEY-----"' + (state.linking ? " disabled" : "") + ">" + esc(state.apiKey) + "</textarea></div>" +
-      '<p class="hint">Paste your App Store Connect API key (.p8). It is verified in-browser for this demo and never uploaded or stored.</p>';
+      '<p class="hint">Create a key in <a href="' + ASC_API_URL + '" target="_blank" rel="noopener noreferrer">App Store Connect → Users and Access → Integrations</a>. The .p8 stays in this browser and is never uploaded.</p>';
 
     return (
       '<div class="modal" id="link-modal">' +
         '<div class="sheet wide" role="dialog" aria-labelledby="link-title">' +
-          '<h2 id="link-title">Link Apple Developer account</h2>' +
-          "<p>Connect App Store Connect so appcompiler.ai can sign builds and upload to your team.</p>" +
+          '<h2 id="link-title">Connect App Store Connect</h2>' +
+          "<p>Link your Apple Developer team at appstoreconnect.apple.com so appcompiler.ai can sign builds and upload.</p>" +
           '<div class="link-methods">' +
             '<button type="button" class="method-card' + (state.linkMethod === "signin" ? " active" : "") + '" data-link-method="signin">' +
-              "<strong>Sign in with Apple</strong><span>Use your Apple ID and pick a developer team.</span>" +
+              "<strong>App Store Connect</strong><span>Sign in at appstoreconnect.apple.com and add your Team ID.</span>" +
             "</button>" +
             '<button type="button" class="method-card' + (state.linkMethod === "api" ? " active" : "") + '" data-link-method="api">' +
-              "<strong>App Store Connect API</strong><span>Use an Issuer ID, Key ID, and API key from Users and Access.</span>" +
+              "<strong>App Store Connect API</strong><span>Issuer ID, Key ID, and API key from Users and Access.</span>" +
             "</button>" +
           "</div>" +
           (state.linkMethod === "api" ? apiFields : signinFields) +
           '<div class="sheet-actions">' +
             '<button type="button" class="btn btn-ghost" data-action="close-link">Cancel</button>' +
-            '<button type="button" class="btn" data-action="confirm-link"' + (state.linking || (state.linkMethod === "signin" && !state.appleAuthed) ? " disabled" : "") + ">" +
+            '<button type="button" class="btn" data-action="confirm-link"' + (state.linking || (state.linkMethod === "signin" && !state.appleAscOpened && !state.appleAuthed) ? " disabled" : "") + ">" +
               (state.linking ? "Linking…" : (state.linkMethod === "api" ? "Verify & link" : "Link account")) +
             "</button>" +
           "</div>" +
@@ -1141,240 +1020,19 @@
     } catch (e) {}
   }
 
-  function authConfig() {
-    return (typeof window !== "undefined" && window.NATIV_AUTH_CONFIG) || {};
-  }
-
-  function smsEndpoint() {
-    var cfg = authConfig();
-    return (cfg.smsEndpoint || "").replace(/\/$/, "");
-  }
-
-  function openAppleAuth() {
-    state.appleAuthOpen = true;
-    state.appleAuthStep = 0;
-    state.appleAuthBusy = false;
-    state.appleAuthCode = "";
-    state.appleAuthText = false;
-    state.appleAuthToken = "";
-    state.appleAuthLast4 = "";
-    state.appleAuthPreviewCode = "";
+  function openAppStoreConnect() {
+    try {
+      window.open(ASC_URL, "_blank", "noopener,noreferrer");
+    } catch (e) {}
+    state.appleAscOpened = true;
+    state.appleAuthed = true;
     render();
-  }
-
-  function closeAppleAuth() {
-    state.appleAuthOpen = false;
-    state.appleAuthBusy = false;
-    render();
-  }
-
-  function rememberPhone(phone) {
-    state.appleAuthPhone = phone || "";
-    try { localStorage.setItem("nativ.applePhone", state.appleAuthPhone); } catch (e) {}
-  }
-
-  function sendAppleAuthText() {
-    if (state.appleAuthBusy) return;
-    var phoneEl = document.getElementById("apple-auth-phone");
-    if (phoneEl) rememberPhone((phoneEl.value || "").trim());
-    var phone = state.appleAuthPhone || authConfig().phone || "";
-    var endpoint = smsEndpoint();
-    var builtin = typeof window !== "undefined" && window.NATIV_BUILTIN_SMS;
-
-    function applySendResult(data) {
-      state.appleAuthBusy = false;
-      state.appleAuthText = true;
-      state.appleAuthToken = data.token || "";
-      state.appleAuthLast4 = data.last4 || "";
-      state.appleAuthCode = "";
-      state.appleAuthPreviewCode = "";
-      if (data.preview && data.code && authConfig().previewSms !== false) {
-        state.appleAuthPreviewCode = data.code;
-        state.appleAuthCode = data.code;
-      }
-      render();
-      showToast(
-        data.preview
-          ? "Verification code ready (preview SMS)"
-          : "Verification code sent by text message"
-      );
-    }
-
-    state.appleAuthBusy = true;
-    render();
-
-    if (!endpoint) {
-      if (!builtin) {
-        state.appleAuthBusy = false;
-        render();
-        showToast("SMS is not available in this browser.");
-        return;
-      }
-      if (!phone) {
-        state.appleAuthBusy = false;
-        render();
-        showToast("Enter your phone number to receive the code.");
-        return;
-      }
-      builtin.send(phone).then(applySendResult).catch(function (err) {
-        state.appleAuthBusy = false;
-        render();
-        showToast(err.message || "Could not send text message");
-      });
-      return;
-    }
-
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "send", phone: phone || undefined })
-    })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok || !data || !data.ok) {
-            throw new Error((data && data.error) || "Could not send text message");
-          }
-          return data;
-        });
-      })
-      .then(applySendResult)
-      .catch(function (err) {
-        // Fall back to built-in OTP if the worker is unreachable.
-        if (builtin && phone) {
-          return builtin.send(phone).then(applySendResult);
-        }
-        state.appleAuthBusy = false;
-        render();
-        showToast(err.message || "Could not send text message");
-      });
-  }
-
-  function runAppleAuth() {
-    if (state.appleAuthBusy) return;
-
-    if (state.appleAuthStep === 0) {
-      var emailEl = document.getElementById("apple-auth-email");
-      var passEl = document.getElementById("apple-auth-pass");
-      state.appleAuthEmail = ((emailEl && emailEl.value) || state.appleAuthEmail || "").trim();
-      state.appleAuthPass = (passEl && passEl.value) || state.appleAuthPass || "";
-      if (!state.appleAuthEmail || state.appleAuthEmail.indexOf("@") === -1) {
-        showToast("Enter your Apple ID.");
-        return;
-      }
-      if (state.appleAuthPass.length < 6) {
-        showToast("Enter your Apple ID password.");
-        return;
-      }
-      state.appleAuthBusy = true;
-      render();
-      setTimeout(function () {
-        state.appleAuthBusy = false;
-        state.appleAuthStep = 1;
-        state.appleAuthCode = "";
-        state.appleAuthText = false;
-        state.appleAuthToken = "";
-        state.appleAuthLast4 = "";
-        state.appleAuthPreviewCode = "";
-        render();
-        // Auto-send when we already know the user's number; otherwise they enter it on this step.
-        if (state.appleAuthPhone || authConfig().phone) {
-          sendAppleAuthText();
-        } else {
-          showToast("Enter your phone number to receive a verification text.");
-        }
-      }, 400);
-      return;
-    }
-
-    var codeEl = document.getElementById("apple-auth-code");
-    state.appleAuthCode = ((codeEl && codeEl.value) || "").trim();
-    if (!/^\d{6}$/.test(state.appleAuthCode)) {
-      showToast("Enter the 6-digit verification code.");
-      return;
-    }
-    if (!state.appleAuthToken) {
-      showToast("Send the text message code first.");
-      return;
-    }
-
-    function finishSignedIn() {
-      state.appleAuthBusy = false;
-      state.appleAuthOpen = false;
-      state.appleAuthed = true;
-      state.appleId = state.appleAuthEmail;
-      state.appleAuthPass = "";
-      state.appleAuthCode = "";
-      state.appleAuthToken = "";
-      state.appleAuthPreviewCode = "";
-      render();
-      showToast("Signed in with Apple");
-    }
-
-    var endpoint = smsEndpoint();
-    var builtin = typeof window !== "undefined" && window.NATIV_BUILTIN_SMS;
-    state.appleAuthBusy = true;
-    render();
-
-    if (!endpoint) {
-      if (!builtin) {
-        state.appleAuthBusy = false;
-        render();
-        showToast("SMS is not available in this browser.");
-        return;
-      }
-      builtin.verify(state.appleAuthCode, state.appleAuthToken).then(function (result) {
-        if (!result.ok) throw new Error(result.error || "Incorrect verification code");
-        finishSignedIn();
-      }).catch(function (err) {
-        state.appleAuthBusy = false;
-        render();
-        showToast(err.message || "Incorrect verification code");
-      });
-      return;
-    }
-
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "verify",
-        code: state.appleAuthCode,
-        token: state.appleAuthToken
-      })
-    })
-      .then(function (res) {
-        return res.json().then(function (data) {
-          if (!res.ok || !data || !data.ok) {
-            throw new Error((data && (data.error || data.message)) || "Incorrect verification code");
-          }
-          return data;
-        });
-      })
-      .then(function () { finishSignedIn(); })
-      .catch(function (err) {
-        if (builtin) {
-          return builtin.verify(state.appleAuthCode, state.appleAuthToken).then(function (result) {
-            if (!result.ok) throw new Error(result.error || "Incorrect verification code");
-            finishSignedIn();
-          });
-        }
-        state.appleAuthBusy = false;
-        render();
-        showToast(err.message || "Incorrect verification code");
-      });
+    showToast("Sign in on App Store Connect, then enter your Team ID here.");
   }
 
   function openLinkModal(thenSubmit) {
     state.linkOpen = true;
     state.linking = false;
-    state.appleAuthed = false;
-    state.appleAuthOpen = false;
-    state.appleAuthStep = 0;
-    state.appleAuthPass = "";
-    state.appleAuthCode = "";
-    state.linkStep = 0;
-    state.otp = "";
-    state.sentCode = "";
     state.pendingSubmitAfterLink = !!thenSubmit;
     if (thenSubmit) state.submitOpen = false;
     render();
@@ -1413,7 +1071,6 @@
     var root = document.getElementById("app");
     var html = state.view === "studio" ? renderStudio() : renderLanding();
     html += renderLinkModal();
-    html += renderAppleAuthModal();
     html += renderSubmitModal();
     html += renderMacModal();
     html += renderPlanModal();
@@ -1441,9 +1098,6 @@
     state.view = "studio";
     state.opening = false;
     pushLog("info", "→ Project generated: " + state.appName + ".xcodeproj");
-    if (state.template === "electro") {
-      pushLog("info", "Using sample sources from ios/Faraday");
-    }
     pushLog("dim", "SwiftUI sources ready · waiting for compile");
     render();
     runCompile();
@@ -1567,7 +1221,7 @@
       headers: headers,
       body: JSON.stringify({
         appName: state.appName,
-        project: state.template === "electro" ? "faraday" : "",
+        project: "",
         files: state.files,
         signed: !!state.planActive,
         planActive: !!state.planActive,
@@ -1607,17 +1261,19 @@
     if (state.linking) return;
 
     if (state.linkMethod === "signin") {
-      if (!state.appleAuthed) {
-        showToast("Sign in with Apple to continue.");
+      if (!state.appleAscOpened && !state.appleAuthed) {
+        showToast("Open App Store Connect to continue.");
         return;
       }
+      var appleEl = document.getElementById("signin-apple-id");
       var teamEl = document.getElementById("signin-team-id");
+      state.appleId = ((appleEl && appleEl.value) || state.appleId || "").trim();
       state.teamId = ((teamEl && teamEl.value) || state.teamId || "").trim();
       if (!/^[0-9A-Za-z]{10}$/.test(state.teamId)) {
         showToast("Enter your 10-character App Store Connect Team ID.");
         return;
       }
-      state.teamName = "Team " + state.teamId;
+      state.teamName = "App Store Connect · " + state.teamId;
       state.issuerId = "";
       state.keyId = "";
       finishLink();
@@ -1661,15 +1317,8 @@
       state.linking = false;
       state.accountLinked = true;
       state.linkOpen = false;
-      state.linkStep = 0;
-      // Never persist secrets (password / private key / one-time code).
-      state.password = "";
+      // Never persist the App Store Connect API private key.
       state.apiKey = "";
-      state.otp = "";
-      state.sentCode = "";
-      state.appleAuthPass = "";
-      state.appleAuthCode = "";
-      state.appleAuthed = false;
       persistAccount();
       if (state.view === "studio") {
         pushLog("ok", "Linked App Store Connect · " + (state.teamName || state.teamId));
@@ -1697,7 +1346,7 @@
     state.issuerId = "";
     state.keyId = "";
     state.appleAuthed = false;
-    state.appleAuthEmail = "";
+    state.appleAscOpened = false;
     persistAccount();
     render();
     showToast("Apple Developer account unlinked.");
@@ -1809,10 +1458,6 @@
       closeLinkModal();
       return;
     }
-    if (e.target.id === "apple-auth-modal") {
-      if (!state.appleAuthBusy) closeAppleAuth();
-      return;
-    }
     if (e.target.id === "submit-modal") {
       state.submitOpen = false;
       render();
@@ -1841,9 +1486,6 @@
     var method = e.target.closest("[data-link-method]");
     if (method) {
       state.linkMethod = method.getAttribute("data-link-method") || "signin";
-      state.linkStep = 0;
-      state.otp = "";
-      state.sentCode = "";
       render();
       return;
     }
@@ -1878,10 +1520,7 @@
     else if (action === "submit") openSubmitModal();
     else if (action === "export") exportZip();
     else if (action === "close-link") closeLinkModal();
-    else if (action === "apple-signin") openAppleAuth();
-    else if (action === "apple-auth-continue") runAppleAuth();
-    else if (action === "apple-auth-text") sendAppleAuthText();
-    else if (action === "close-apple-auth") closeAppleAuth();
+    else if (action === "apple-signin" || action === "open-asc") openAppStoreConnect();
     else if (action === "confirm-link") runLinkAccount();
     else if (action === "unlink") unlinkAccount();
     else if (action === "close-submit") {
@@ -1897,9 +1536,7 @@
       state.prompt = e.target.value;
       var preview = document.getElementById("landing-preview");
       if (preview) preview.innerHTML = landingPreviewInner();
-    } else if (id === "apple-auth-email") state.appleAuthEmail = e.target.value;
-    else if (id === "apple-auth-pass") state.appleAuthPass = e.target.value;
-    else if (id === "apple-auth-code") state.appleAuthCode = e.target.value;
+    } else if (id === "signin-apple-id") state.appleId = e.target.value;
     else if (id === "signin-team-id") state.teamId = e.target.value;
     else if (id === "issuer-id") state.issuerId = e.target.value;
     else if (id === "key-id") state.keyId = e.target.value;
@@ -1908,18 +1545,9 @@
     else if (id === "bundle-id") state.bundleId = e.target.value;
   }
 
-  function onAppChange(e) {
-    if (e.target.id === "team-select") {
-      state.teamId = e.target.value;
-      var team = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
-      state.teamName = team ? team.name : state.teamName;
-    }
-  }
-
   var root = document.getElementById("app");
   root.addEventListener("click", onAppClick);
   root.addEventListener("input", onAppInput);
-  root.addEventListener("change", onAppChange);
   consumePlanReturn();
   render();
   refreshCloudMac();

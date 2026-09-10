@@ -1,11 +1,11 @@
 {
-  "name": "Faraday",
-  "install": "cd mcp/faraday && npm ci",
+  "name": "appcompiler.ai",
+  "install": "echo ready",
   "terminals": [
     {
       "name": "site",
       "command": "python3 -m http.server 8000",
-      "description": "Serves the Faraday / appcompiler.ai static GitHub Pages site at http://localhost:8000"
+      "description": "Serves the appcompiler.ai static GitHub Pages site at http://localhost:8000"
     }
   ],
   "ports": [

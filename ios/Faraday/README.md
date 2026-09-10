@@ -20,7 +20,7 @@ Native SwiftUI catalog app for Faraday — Ontario electric rides.
 - Product grid with in-stock / special-order badges
 - Push navigation to product detail with ask/email, call, and share
 - **Contact** tab with phone, email, and GST/HST details
-- Same inventory as the website (`shop/products.js` → bundled `products.json`)
+- Inventory is bundled as `products.json`
 
 ## Bundle ID
 

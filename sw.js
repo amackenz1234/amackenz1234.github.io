@@ -1,4 +1,4 @@
-const CACHE = "appcompiler-v1";
+const CACHE = "appcompiler-v2";
 const ASSETS = [
   "./",
   "./index.html",
