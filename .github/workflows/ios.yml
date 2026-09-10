@@ -8,22 +8,35 @@ on:
       - '.github/workflows/ios.yml'
       - 'scripts/require-cloud-xcode.sh'
       - 'scripts/run-full-macos.sh'
+      - 'scripts/ipa-mode.sh'
+      - 'scripts/package-ipa.sh'
   pull_request:
     paths:
       - 'ios/**'
       - '.github/workflows/ios.yml'
       - 'scripts/require-cloud-xcode.sh'
       - 'scripts/run-full-macos.sh'
+      - 'scripts/ipa-mode.sh'
+      - 'scripts/package-ipa.sh'
   workflow_dispatch:
     inputs:
       app_name:
         description: App name from Nativ Cloud Mac
         required: false
-        default: ElectroCycles
+        default: Faraday
       reason:
         description: Why this compile was requested
         required: false
         default: manual
+      signed:
+        description: Produce a signed IPA when Apple signing secrets are present
+        required: false
+        type: boolean
+        default: true
+      export_method:
+        description: IPA export method (ad-hoc, app-store, development)
+        required: false
+        default: ad-hoc
 
 concurrency:
   group: ios-build-${{ github.ref }}
@@ -37,7 +50,7 @@ jobs:
     runs-on: xcode-27
     defaults:
       run:
-        working-directory: ios/ElectroCycles
+        working-directory: ios/Faraday
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,16 +64,16 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: bash scripts/run-full-macos.sh
 
-      - name: Build ElectroCycles for iOS Simulator
+      - name: Build Faraday for iOS Simulator
         env:
-          NATIV_APP_NAME: ${{ github.event.inputs.app_name || 'ElectroCycles' }}
+          NATIV_APP_NAME: ${{ github.event.inputs.app_name || 'Faraday' }}
           NATIV_REASON: ${{ github.event.inputs.reason || 'ci' }}
         run: |
           set -o pipefail
           echo "Cloud Mac compile: $NATIV_APP_NAME ($NATIV_REASON)"
           xcodebuild \
-            -project ElectroCycles.xcodeproj \
-            -scheme ElectroCycles \
+            -project Faraday.xcodeproj \
+            -scheme Faraday \
             -configuration Debug \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
@@ -68,12 +81,9 @@ jobs:
             clean build
 
   ipa:
-    name: Package unsigned IPA
+    name: Package IPA
     needs: build
     runs-on: xcode-27
-    defaults:
-      run:
-        working-directory: ios/ElectroCycles
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,40 +94,24 @@ jobs:
           xcode-version: "27"
 
       - name: Run full macOS 27 RC
-        working-directory: ${{ github.workspace }}
         run: bash scripts/run-full-macos.sh
 
-      - name: Archive ElectroCycles for device (unsigned)
-        run: |
-          set -o pipefail
-          xcodebuild \
-            -project ElectroCycles.xcodeproj \
-            -scheme ElectroCycles \
-            -configuration Release \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/ElectroCycles.xcarchive" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            clean archive
-
-      - name: Package .app into an unsigned .ipa
-        run: |
-          set -euo pipefail
-          APP="$RUNNER_TEMP/ElectroCycles.xcarchive/Products/Applications/ElectroCycles.app"
-          test -d "$APP"
-          WORK="$RUNNER_TEMP/ipa"
-          rm -rf "$WORK"
-          mkdir -p "$WORK/Payload"
-          cp -R "$APP" "$WORK/Payload/"
-          ( cd "$WORK" && zip -qry "$RUNNER_TEMP/ElectroCycles-unsigned.ipa" Payload )
-          unzip -l "$RUNNER_TEMP/ElectroCycles-unsigned.ipa"
-          echo "IPA_PATH=$RUNNER_TEMP/ElectroCycles-unsigned.ipa" >> "$GITHUB_ENV"
+      - name: Archive and package IPA
+        env:
+          APP_NAME: ${{ github.event.inputs.app_name || 'Faraday' }}
+          WANT_SIGNED: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.signed == 'false' && 'false' || 'true' }}
+          EXPORT_METHOD: ${{ github.event.inputs.export_method || 'ad-hoc' }}
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_CODE_SIGN_IDENTITY: ${{ secrets.IOS_CODE_SIGN_IDENTITY }}
+        run: bash scripts/package-ipa.sh
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ElectroCycles-unsigned-ipa
+          name: ${{ env.IPA_NAME }}
           path: ${{ env.IPA_PATH }}
           if-no-files-found: error

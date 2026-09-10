@@ -6,6 +6,7 @@ import {
   requireMacOS27,
   requireFullMacOS,
   requireOsRunning,
+  requireMonthlyPlan,
   inspectHost,
   cloudMacInfo,
   buildWorkflowDispatchUrl,
@@ -96,6 +97,13 @@ test("workflow dispatch URL and body", () => {
   assert.equal(body.inputs.app_name, "HabitKit");
 });
 
+test("requireMonthlyPlan gates signed IPA when REQUIRE_PLAN=1", () => {
+  assert.equal(requireMonthlyPlan({ signed: false }, { REQUIRE_PLAN: "1" }).ok, true);
+  assert.equal(requireMonthlyPlan({ signed: true, planActive: true }, { REQUIRE_PLAN: "1" }).ok, true);
+  assert.equal(requireMonthlyPlan({ signed: true }, { REQUIRE_PLAN: "1" }).ok, false);
+  assert.equal(requireMonthlyPlan({ signed: true }, {}).ok, true);
+});
+
 test("mock compile logs run on cloud Apple Silicon with Xcode", () => {
   const logs = mockCompileLogs("HabitKit", { "App.swift": "", "Info.plist": "" });
   assert.match(logs[0], /Cloud Mac/);
@@ -104,6 +112,13 @@ test("mock compile logs run on cloud Apple Silicon with Xcode", () => {
   assert.match(logs.join("\n"), /Apple Silicon/);
   assert.match(logs.join("\n"), /Compile App.swift/);
   assert.match(logs.join("\n"), /BUILD SUCCEEDED/);
+  assert.match(logs.join("\n"), /monthly Cloud Mac plan/);
+});
+
+test("mock compile logs package a signed IPA when requested", () => {
+  const logs = mockCompileLogs("Faraday", { "FaradayApp.swift": "" }, { signed: true });
+  assert.match(logs.join("\n"), /Faraday-signed\.ipa/);
+  assert.match(logs.join("\n"), /IPA READY/);
 });
 
 test("dispatchCloudCompile posts to GitHub Actions", async () => {

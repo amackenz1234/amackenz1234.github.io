@@ -1,4 +1,4 @@
-// Stripe Checkout Session function for the Electro Cycles storefront.
+// Stripe Checkout Session function for the Faraday storefront.
 //
 // Deployable as a Cloudflare Worker (default export) — see serverless/README.md.
 // The core `buildSessionParams` helper is exported for unit testing and reuse

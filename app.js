@@ -6,7 +6,7 @@
     "A local cafe finder with maps and favorites",
     "A personal finance app with budgets",
     "A meditation timer with Live Activities",
-    "Electro Cycles shop with product catalog"
+    "Faraday shop with product catalog"
   ];
 
   var KW = {
@@ -28,6 +28,13 @@
     savedAccount = JSON.parse(localStorage.getItem("nativ.appleAccount") || "null");
   } catch (e) {
     savedAccount = null;
+  }
+
+  var savedPlan = null;
+  try {
+    savedPlan = JSON.parse(localStorage.getItem("nativ.cloudPlan") || "null");
+  } catch (e) {
+    savedPlan = null;
   }
 
   var state = {
@@ -77,6 +84,11 @@
     bundleId: "",
     toast: null,
     toastTimer: null,
+    planOpen: false,
+    planBusy: false,
+    planActive: !!(savedPlan && savedPlan.active),
+    planSource: (savedPlan && savedPlan.source) || "",
+    planSessionId: (savedPlan && savedPlan.sessionId) || "",
     macOpen: false,
     macBusy: false,
     macInfo: {
@@ -93,6 +105,17 @@
       xcode: "Xcode 27"
     }
   };
+
+  function persistPlan() {
+    var payload = {
+      active: !!state.planActive,
+      source: state.planSource || "",
+      sessionId: state.planSessionId || ""
+    };
+    try {
+      localStorage.setItem("nativ.cloudPlan", JSON.stringify(payload));
+    } catch (e) {}
+  }
 
   function persistAccount() {
     var payload = {
@@ -124,7 +147,7 @@
 
   function detectTemplate(prompt) {
     var p = (prompt || "").toLowerCase();
-    if (/electro|e-?bike|evoque|scooter|catalog/.test(p)) return "electro";
+    if (/faraday|electro|e-?bike|scooter|catalog/.test(p)) return "electro";
     if (/habit|streak/.test(p)) return "habit";
     if (/cafe|coffee|map|finder/.test(p)) return "cafe";
     if (/finance|budget|money/.test(p)) return "finance";
@@ -134,7 +157,7 @@
 
   function deriveName(prompt) {
     var template = detectTemplate(prompt);
-    if (template === "electro") return "ElectroCycles";
+    if (template === "electro") return "Faraday";
     if (template === "habit") return "HabitKit";
     if (template === "cafe") return "CafeFinder";
     if (template === "finance") return "Budgetly";
@@ -180,7 +203,7 @@
     }
     if (template === "electro") {
       return [
-        ["Evoque Bandit", "$5,499 · E-Bikes"],
+        ["Bandit", "$5,499 · E-Bikes"],
         ["Stinger Plus", "$4,449 · E-Scooters"],
         ["Streetster RR", "$8,599 · E-Bikes"]
       ];
@@ -204,10 +227,10 @@
 
     if (template === "electro") {
       return {
-        "ElectroCyclesApp.swift":
+        "FaradayApp.swift":
           "import SwiftUI\n\n" +
           "@main\n" +
-          "struct ElectroCyclesApp: App {\n" +
+          "struct FaradayApp: App {\n" +
           "    @State private var store = ShopStore()\n\n" +
           "    var body: some Scene {\n" +
           "        WindowGroup {\n" +
@@ -231,7 +254,7 @@
           "                }\n" +
           "                .padding()\n" +
           "            }\n" +
-          "            .navigationTitle(\"Electro Cycles\")\n" +
+          "            .navigationTitle(\"Faraday\")\n" +
           "        }\n" +
           "    }\n" +
           "}",
@@ -522,6 +545,9 @@
           '<button type="button" class="account-chip' + (state.accountLinked ? " linked" : "") + '" data-action="link-account">' +
             '<span class="dot" aria-hidden="true"></span>' + esc(accountLabel()) +
           "</button>" +
+          '<button type="button" class="account-chip' + (state.planActive ? " linked" : "") + '" data-action="open-plan">' +
+            '<span class="dot" aria-hidden="true"></span>' + esc(planLabel()) +
+          "</button>" +
           '<button type="button" class="account-chip linked" data-action="open-mac">' +
             '<span class="dot" aria-hidden="true"></span>' + esc(macLabel()) +
           "</button>" +
@@ -553,13 +579,13 @@
         '<p class="lede">Not a web wrapper. Nativ generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
         '<div class="feature-list">' +
           "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>The cloud Mac boots and runs full macOS 27 RC (launchd pid 1, Darwin, /System) with Xcode 27 — no Mac on your desk.</p></article>" +
-          "<article class=\"feature\"><h3>SwiftUI you own</h3><p>Read every file, tweak the project, export the full Xcode package whenever you want.</p></article>" +
+          "<article class=\"feature\"><h3>Signed IPA</h3><p>The monthly Cloud Mac plan signs the archive on that Mac and downloads a real .ipa — not an unsigned zip.</p></article>" +
           "<article class=\"feature\"><h3>App Store Connect</h3><p>Link your Apple Developer account, then submit builds, metadata, and privacy details in two clicks.</p></article>" +
         "</div>" +
       "</div></section>" +
       '<section class="section" id="publish"><div class="wrap">' +
         "<h2>From finished app to App Store review.</h2>" +
-        '<p class="lede">Link App Store Connect with your Apple Developer account. Signing, packaging, and delivery are automated after that. Try the included <a href="./shop/">Electro Cycles sample shop</a>.</p>' +
+        '<p class="lede">Link App Store Connect with your Apple Developer account. Signing, packaging, and delivery are automated after that. Try the included <a href="./shop/">Faraday sample shop</a>.</p>' +
         '<div class="prompt-actions publish-actions">' +
           '<button type="button" class="btn btn-ghost" data-action="link-account">' +
             (state.accountLinked ? "Manage Apple Developer" : "Link Apple Developer account") +
@@ -567,7 +593,7 @@
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
         "</div>" +
       "</div></section>" +
-      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
+      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Faraday sample shop</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
       (state.opening
         ? '<div class="opening-overlay"><div class="spinner" aria-hidden="true"></div><p>Generating SwiftUI project…</p></div>'
         : "")
@@ -589,7 +615,11 @@
       return '<div class="' + l.cls + '">' + esc(l.msg) + "</div>";
     }).join("") || '<div class="dim">Ready. Press Compile to run xcodebuild.</div>';
 
-    var buildLabel = state.building ? "Compiling…" : state.built ? "Recompile" : "Compile";
+    var buildLabel = state.building
+      ? "Compiling…"
+      : state.built
+        ? "Recompile"
+        : (state.planActive ? "Compile & sign IPA" : "Compile");
     var theme = "theme-" + state.template;
 
     return (
@@ -600,6 +630,7 @@
             "<strong>" + esc(state.appName) + ".xcodeproj</strong>" +
             (state.built ? '<span class="badge">Build succeeded</span>' : "") +
             (state.accountLinked ? '<span class="badge">ASC linked</span>' : "") +
+            (state.planActive ? '<span class="badge">Signed IPA · monthly</span>' : "") +
             '<span class="badge">Full macOS 27 RC · running</span>' +
           "</div>" +
           '<div class="studio-actions">' +
@@ -607,6 +638,9 @@
             '<button type="button" class="btn btn-ghost" data-action="export">Export</button>' +
             '<button type="button" class="account-chip' + (state.accountLinked ? " linked" : "") + '" data-action="link-account">' +
               '<span class="dot" aria-hidden="true"></span>' + esc(accountLabel()) +
+            "</button>" +
+            '<button type="button" class="account-chip' + (state.planActive ? " linked" : "") + '" data-action="open-plan">' +
+              '<span class="dot" aria-hidden="true"></span>' + esc(planLabel()) +
             "</button>" +
             '<button type="button" class="account-chip linked" data-action="open-mac">' +
               '<span class="dot" aria-hidden="true"></span>' + esc(macLabel()) +
@@ -890,7 +924,7 @@
               (endpoint ? "<br>Dispatcher · " + esc(endpoint) : "<br>Built-in cloud console") +
             "</div>" +
           "</div>" +
-          '<p class="hint">CI runs scripts/run-full-macos.sh on the xcode-27 VM. The job fails if launchd is not pid 1 or core macOS daemons are down.</p>' +
+          '<p class="hint">CI runs scripts/run-full-macos.sh on the xcode-27 VM, then scripts/package-ipa.sh. A monthly plan plus Apple signing secrets produces a signed .ipa.</p>' +
           '<div class="sheet-actions">' +
             '<button type="button" class="btn" data-action="close-mac"' + (state.macBusy ? " disabled" : "") + ">Done</button>" +
           "</div>" +
@@ -941,6 +975,163 @@
       .catch(function () {
         state.macBusy = false;
       });
+  }
+
+  function planConfig() {
+    return (typeof window !== "undefined" && window.NATIV_PLAN_CONFIG) || {};
+  }
+
+  function planEndpoint() {
+    return String(planConfig().checkoutEndpoint || "").replace(/\/$/, "");
+  }
+
+  function planLabel() {
+    if (state.planActive) return "Cloud Mac · monthly";
+    var amount = Number(planConfig().amount || 2900);
+    return "Monthly plan · $" + (amount / 100).toFixed(0);
+  }
+
+  function activatePlan(source, sessionId) {
+    state.planActive = true;
+    state.planSource = source || "demo";
+    state.planSessionId = sessionId || "";
+    persistPlan();
+  }
+
+  function renderPlanModal() {
+    if (!state.planOpen) return "";
+    var amount = Number(planConfig().amount || 2900);
+    var dollars = "$" + (amount / 100).toFixed(0);
+    if (state.planActive) {
+      return (
+        '<div class="modal" id="plan-modal">' +
+          '<div class="sheet wide" role="dialog" aria-labelledby="plan-title">' +
+            '<h2 id="plan-title">Cloud Mac monthly</h2>' +
+            "<p>Your plan is active. Compiles on the full macOS 27 RC Cloud Mac can export a signed .ipa.</p>" +
+            '<div class="account-card">' +
+              '<div class="label">Current plan</div>' +
+              '<div class="name">' + dollars + " / month</div>" +
+              '<div class="meta">Signed IPA · Xcode 27 · Apple Silicon' +
+                (state.planSource ? "<br>Source · " + esc(state.planSource) : "") +
+              "</div>" +
+            "</div>" +
+            '<div class="sheet-actions">' +
+              '<button type="button" class="btn btn-ghost" data-action="cancel-plan">Cancel plan</button>' +
+              '<button type="button" class="btn" data-action="close-plan">Done</button>' +
+            "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="modal" id="plan-modal">' +
+        '<div class="sheet wide" role="dialog" aria-labelledby="plan-title">' +
+          '<h2 id="plan-title">Cloud Mac monthly</h2>' +
+          "<p>Unlock signed .ipa builds on the cloud Mac running macOS 27 RC and Xcode 27. Simulator compiles stay free.</p>" +
+          '<div class="account-card">' +
+            '<div class="label">Monthly plan</div>' +
+            '<div class="name">' + dollars + " USD / month</div>" +
+            "<div class=\"meta\">Signed IPA on Apple Silicon<br>Full macOS 27 RC + Xcode 27<br>Cancel any time</div>" +
+          "</div>" +
+          '<p class="hint">Hosted Stripe Checkout when a plan endpoint is configured. Without it, this browser starts a demo subscription so you can try signed packaging.</p>' +
+          '<div class="sheet-actions">' +
+            '<button type="button" class="btn btn-ghost" data-action="close-plan"' + (state.planBusy ? " disabled" : "") + ">Not now</button>" +
+            '<button type="button" class="btn btn-amber" data-action="subscribe-plan"' + (state.planBusy ? " disabled" : "") + ">" +
+              (state.planBusy ? "Starting…" : "Start monthly plan") +
+            "</button>" +
+          "</div>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  function openPlanModal() {
+    state.planOpen = true;
+    render();
+  }
+
+  function closePlanModal() {
+    state.planOpen = false;
+    render();
+  }
+
+  function startMonthlyPlan() {
+    if (state.planBusy || state.planActive) return;
+    var endpoint = planEndpoint();
+    if (!endpoint) {
+      activatePlan("demo");
+      state.planOpen = false;
+      showToast("Monthly Cloud Mac plan is active. Compiles can sign a .ipa.");
+      render();
+      return;
+    }
+    state.planBusy = true;
+    render();
+    fetch(endpoint + "/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ origin: window.location.origin + window.location.pathname.replace(/[^/]*$/, "") })
+    })
+      .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+      .then(function (out) {
+        state.planBusy = false;
+        if (out.body && out.body.url) {
+          window.location.href = out.body.url;
+          return;
+        }
+        showToast((out.body && out.body.error) || "Could not start checkout.");
+        render();
+      })
+      .catch(function () {
+        state.planBusy = false;
+        showToast("Plan checkout unreachable.");
+        render();
+      });
+  }
+
+  function cancelMonthlyPlan() {
+    state.planActive = false;
+    state.planSource = "";
+    state.planSessionId = "";
+    persistPlan();
+    state.planOpen = false;
+    showToast("Monthly plan cancelled on this device.");
+    render();
+  }
+
+  function consumePlanReturn() {
+    var params;
+    try { params = new URLSearchParams(window.location.search); } catch (e) { return; }
+    var flag = params.get("plan");
+    if (!flag) return;
+    if (flag === "success") {
+      var sessionId = params.get("session_id") || "";
+      var endpoint = planEndpoint();
+      if (endpoint && sessionId && !params.get("demo")) {
+        fetch(endpoint + "/session?session_id=" + encodeURIComponent(sessionId), { headers: { Accept: "application/json" } })
+          .then(function (res) { return res.json(); })
+          .then(function (body) {
+            if (body && body.active) {
+              activatePlan("stripe", sessionId);
+              showToast("Monthly Cloud Mac plan is active.");
+              render();
+            }
+          })
+          .catch(function () {});
+      } else {
+        activatePlan(params.get("demo") ? "demo" : "stripe", sessionId);
+        showToast("Monthly Cloud Mac plan is active.");
+      }
+    } else if (flag === "cancel") {
+      showToast("Checkout cancelled. Simulator compiles still work.");
+    }
+    try {
+      params.delete("plan");
+      params.delete("session_id");
+      params.delete("demo");
+      var next = window.location.pathname + (params.toString() ? "?" + params.toString() : "") + window.location.hash;
+      window.history.replaceState({}, "", next);
+    } catch (e) {}
   }
 
   function authConfig() {
@@ -1218,6 +1409,7 @@
     html += renderAppleAuthModal();
     html += renderSubmitModal();
     html += renderMacModal();
+    html += renderPlanModal();
     html += renderToast();
     root.innerHTML = html;
     var consoleEl = document.getElementById("console");
@@ -1243,7 +1435,7 @@
     state.opening = false;
     pushLog("info", "→ Project generated: " + state.appName + ".xcodeproj");
     if (state.template === "electro") {
-      pushLog("info", "Using sample sources from ios/ElectroCycles");
+      pushLog("info", "Using sample sources from ios/Faraday");
     }
     pushLog("dim", "SwiftUI sources ready · waiting for compile");
     render();
@@ -1326,8 +1518,14 @@
     if (state.accountLinked) {
       phases.push({ delay: 450 + fileNames.length * 380 + 520, cls: "info", msg: "Signing with team " + state.teamId });
     }
-    phases.push({ delay: 450 + fileNames.length * 380 + 780, cls: "ok", msg: "** BUILD SUCCEEDED **" });
-    phases.push({ delay: 450 + fileNames.length * 380 + 980, cls: "info", msg: "Installed on iPhone 17 Simulator" });
+    if (state.planActive) {
+      phases.push({ delay: 450 + fileNames.length * 380 + 700, cls: "info", msg: "Exporting signed " + state.appName + ".ipa (ad-hoc) on macOS 27 / Xcode 27" });
+      phases.push({ delay: 450 + fileNames.length * 380 + 860, cls: "ok", msg: "** IPA READY ** " + state.appName + "-signed.ipa" });
+    } else {
+      phases.push({ delay: 450 + fileNames.length * 380 + 700, cls: "warn", msg: "Unsigned IPA only — start the monthly Cloud Mac plan to sign" });
+    }
+    phases.push({ delay: 450 + fileNames.length * 380 + 980, cls: "ok", msg: "** BUILD SUCCEEDED **" });
+    phases.push({ delay: 450 + fileNames.length * 380 + 1180, cls: "info", msg: "Installed on iPhone 17 Simulator" });
 
     if (state.compileTimer) {
       state.compileTimer.forEach(function (id) { clearTimeout(id); });
@@ -1362,8 +1560,11 @@
       headers: headers,
       body: JSON.stringify({
         appName: state.appName,
-        project: state.template === "electro" ? "electro" : "",
-        files: state.files
+        project: state.template === "electro" ? "faraday" : "",
+        files: state.files,
+        signed: !!state.planActive,
+        planActive: !!state.planActive,
+        exportMethod: "ad-hoc"
       })
     })
       .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
@@ -1610,6 +1811,10 @@
       render();
       return;
     }
+    if (e.target.id === "plan-modal") {
+      closePlanModal();
+      return;
+    }
 
     var example = e.target.closest("[data-example]");
     if (example) {
@@ -1659,6 +1864,10 @@
     } else if (action === "compile") runCompile();
     else if (action === "open-mac") openMacModal();
     else if (action === "close-mac") closeMacModal();
+    else if (action === "open-plan") openPlanModal();
+    else if (action === "close-plan") closePlanModal();
+    else if (action === "subscribe-plan") startMonthlyPlan();
+    else if (action === "cancel-plan") cancelMonthlyPlan();
     else if (action === "submit") openSubmitModal();
     else if (action === "export") exportZip();
     else if (action === "close-link") closeLinkModal();
@@ -1704,6 +1913,7 @@
   root.addEventListener("click", onAppClick);
   root.addEventListener("input", onAppInput);
   root.addEventListener("change", onAppChange);
+  consumePlanReturn();
   render();
   refreshCloudMac();
 })();

@@ -1,4 +1,4 @@
-# Electro Cycles — real Stripe Checkout function
+# Faraday shop checkout + Nativ Cloud Mac plan
 
 GitHub Pages is static, so real (multi-item) purchases use a tiny serverless
 function that creates a [Stripe Checkout Session](https://stripe.com/docs/api/checkout/sessions)
@@ -10,7 +10,7 @@ are resolved server-side from `PRICE_MAP`, so amounts can't be tampered with.
 - A Stripe account.
 - `STRIPE_SECRET_KEY` — your secret key (`sk_live_…` or `sk_test_…`). Keep it secret.
 - `PRICE_MAP` — JSON mapping each product SKU to a Stripe Price ID, e.g.
-  `{"EC-BANDIT":"price_123","STG25001":"price_456"}`.
+  `{"FD-BANDIT":"price_123","STG25001":"price_456"}`.
 - Optional: `TAX_RATE_ID` (a Stripe Tax Rate) — otherwise Stripe Automatic Tax is used.
 - Optional: `SUCCESS_URL`, `CANCEL_URL`, `ALLOW_ORIGIN` (defaults to `*`).
 
@@ -18,7 +18,7 @@ are resolved server-side from `PRICE_MAP`, so amounts can't be tampered with.
 
 ```bash
 npm i -g wrangler
-wrangler init electro-checkout           # or add to an existing project
+wrangler init faraday-checkout           # or add to an existing project
 # put stripe-checkout.mjs as the worker module entry
 wrangler secret put STRIPE_SECRET_KEY
 wrangler secret put PRICE_MAP            # paste the JSON map
@@ -33,7 +33,7 @@ Enable **Card**, **Apple Pay**, and **Klarna** in your Stripe Dashboard
 Set the deployed URL in [`../shop/payments-config.js`](../shop/payments-config.js):
 
 ```js
-window.PAYMENTS_CONFIG = { checkoutEndpoint: "https://electro-checkout.<you>.workers.dev" };
+window.PAYMENTS_CONFIG = { checkoutEndpoint: "https://faraday-checkout.<you>.workers.dev" };
 ```
 
 Once set, the shop's "Checkout" button redirects to Stripe's hosted, PCI-compliant
@@ -134,3 +134,40 @@ MOCK_MAC=1 node serverless/mac-xcode-local.mjs
 
 Point [`../mac-config.js`](../mac-config.js) at `http://127.0.0.1:8788`.
 Without an endpoint, the studio still uses the built-in Cloud Mac console.
+
+### Signed IPA
+
+[`scripts/package-ipa.sh`](../scripts/package-ipa.sh) archives Faraday on the
+cloud Mac. When these GitHub Actions secrets exist, it signs and exports a
+`.ipa`:
+
+- `IOS_CERTIFICATE_BASE64` — base64-encoded signing `.p12`
+- `IOS_CERTIFICATE_PASSWORD` — password for that `.p12`
+- `IOS_PROVISION_PROFILE_BASE64` — base64-encoded `.mobileprovision`
+- `IOS_TEAM_ID` — 10-character Apple team id
+- Optional: `IOS_BUNDLE_ID` (default `ca.faraday.rides`), `IOS_CODE_SIGN_IDENTITY`
+
+Without those secrets the job still uploads `Faraday-unsigned.ipa`.
+
+## Nativ Cloud Mac monthly plan
+
+Signed IPA compiles are unlocked by a **$29/month** Stripe subscription
+(Product `Nativ Cloud Mac`, Price `price_1UDyrEAZ8aLPU3hFOHtMe7zm` on the
+test sandbox). The worker is [`nativ-plan.mjs`](./nativ-plan.mjs).
+
+Checkout uses `mode=subscription`. It does **not** send `payment_method_types`
+(dynamic payment methods) and does **not** enable `automatic_tax` until a
+Stripe Tax registration is active.
+
+Secrets:
+
+- `STRIPE_SECRET_KEY` — restricted key preferred
+- `PLAN_PRICE_ID` — `price_1UDyrEAZ8aLPU3hFOHtMe7zm`
+- Optional: `SITE_ORIGIN`, `SUCCESS_URL`, `CANCEL_URL`, `ALLOW_ORIGIN`, `MOCK_PLAN=1`
+
+```bash
+MOCK_PLAN=1 node serverless/nativ-plan-local.mjs
+```
+
+Point [`../plan-config.js`](../plan-config.js) at `http://127.0.0.1:8789`.
+Without an endpoint, the studio starts a demo plan in the browser.

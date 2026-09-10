@@ -155,7 +155,21 @@ export function buildDispatchBody(ref, inputs) {
   };
 }
 
-export function mockCompileLogs(appName, files) {
+export function requireMonthlyPlan(body, env) {
+  body = body || {};
+  env = env || {};
+  if (!body.signed) return { ok: true };
+  if (env.REQUIRE_PLAN === "1" && !body.planActive) {
+    return {
+      ok: false,
+      error: "A monthly Cloud Mac plan is required to produce a signed IPA.",
+    };
+  }
+  return { ok: true };
+}
+
+export function mockCompileLogs(appName, files, opts) {
+  opts = opts || {};
   const names = Object.keys(files || {}).filter((f) => /\.swift$/.test(f));
   const logs = [
     "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…",
@@ -167,8 +181,16 @@ export function mockCompileLogs(appName, files) {
   ];
   names.forEach((f) => logs.push("Compile " + f));
   logs.push("Link " + appName + " (arm64)");
+  if (opts.signed) {
+    logs.push("Signing " + appName + ".ipa with Apple Distribution on cloud macOS 27");
+    logs.push("xcodebuild -exportArchive -exportOptionsPlist ExportOptions.plist");
+    logs.push("Packaged signed " + appName + "-signed.ipa");
+  } else {
+    logs.push("Unsigned IPA available — start the monthly Cloud Mac plan to sign");
+  }
   logs.push("** BUILD SUCCEEDED **");
   logs.push("Installed on iPhone 17 Simulator");
+  if (opts.signed) logs.push("** IPA READY ** " + appName + "-signed.ipa");
   return logs;
 }
 
@@ -187,6 +209,8 @@ export async function dispatchCloudCompile(env, body, fetchFn) {
   const payload = buildDispatchBody(env.GITHUB_REF || "main", {
     app_name: String((body && body.appName) || "MyApp"),
     reason: "nativ-cloud-mac",
+    signed: body && body.signed ? "true" : "false",
+    export_method: String((body && body.exportMethod) || "ad-hoc"),
   });
   const res = await fetchFn(url, {
     method: "POST",
@@ -217,6 +241,9 @@ export async function dispatchCloudCompile(env, body, fetchFn) {
       "Runner: xcode-27 · full macOS 27 RC running (launchd pid 1) · arch arm64",
       "Workflow: " + workflow + " on " + owner + "/" + repo,
       "Scheme: " + ((body && body.appName) || "MyApp"),
+      body && body.signed
+        ? "IPA: signed .ipa on monthly Cloud Mac plan"
+        : "IPA: unsigned fallback",
     ],
   };
 }
@@ -233,6 +260,9 @@ export async function handleCompile(env, body, deps) {
 
   const appName = String((body && body.appName) || "MyApp").replace(/[^A-Za-z0-9]/g, "") || "MyApp";
   const files = (body && body.files) || {};
+  const signed = !!(body && body.signed);
+  const planCheck = requireMonthlyPlan(body, env);
+  if (!planCheck.ok) return planCheck;
 
   if (env.MOCK_MAC === "1" || !env.GITHUB_TOKEN) {
     return {
@@ -240,14 +270,19 @@ export async function handleCompile(env, body, deps) {
       mock: !env.GITHUB_TOKEN,
       cloud: true,
       silicon: true,
+      signed,
       name: host.name,
       xcode: host.xcode,
-      logs: mockCompileLogs(appName, files),
+      logs: mockCompileLogs(appName, files, { signed }),
     };
   }
 
   const fetchFn = deps.fetch || fetch;
-  const dispatched = await dispatchCloudCompile(env, { appName, files }, fetchFn);
+  const dispatched = await dispatchCloudCompile(
+    env,
+    { appName, files, signed, exportMethod: body && body.exportMethod },
+    fetchFn
+  );
   if (!dispatched.ok) return dispatched;
   return {
     ok: true,
