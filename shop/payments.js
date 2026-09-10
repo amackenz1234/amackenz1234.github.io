@@ -75,6 +75,38 @@
     return true;
   }
 
+  function serverEnabled() {
+    return !!(cfg.checkoutEndpoint && lines().length);
+  }
+
+  function serverCheckout() {
+    ui.processing = true; ui.error = ""; render();
+    var payload = {
+      items: lines().map(function (l) { return { sku: l.p.sku, qty: l.qty }; }),
+      origin: location.origin
+    };
+    fetch(cfg.checkoutEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) {
+        if (d && d.url) {
+          window.location = d.url;
+        } else {
+          ui.processing = false;
+          ui.error = (d && d.error) || "Checkout could not be started.";
+          render();
+        }
+      })
+      .catch(function () {
+        ui.processing = false;
+        ui.error = "Could not reach the checkout server.";
+        render();
+      });
+  }
+
   function payWithStripe() {
     ui.processing = true; ui.error = ""; render();
     var items = lines().map(function (l) { return { price: cfg.prices[l.p.sku], quantity: l.qty }; });
@@ -158,6 +190,7 @@
 
   function checkout() {
     if (!lines().length) return;
+    if (serverEnabled()) return serverCheckout();
     if (stripeEnabled()) return payWithStripe();
     if (ui.method === "klarna") return payKlarna();
     if (ui.method === "applepay") return payApplePay();
@@ -245,6 +278,18 @@
     var err = ui.error ? '<div class="ecp-error" role="alert">' + esc(ui.error) + "</div>" : "";
     var summary = '<div class="ecp-summary"><span>' + count() + " item" + (count() === 1 ? "" : "s") + "</span><span>" + money(total()) + "</span></div>";
     var backBtn = '<button type="button" class="ecp-btn ghost" data-ecp="to-cart"' + (ui.processing ? " disabled" : "") + ">Back to cart</button>";
+
+    if (serverEnabled()) {
+      return (
+        header("Checkout") +
+        '<div class="ecp-scroll">' + summary +
+          '<p class="ecp-note">Secure checkout by Stripe. You\u2019ll be redirected to complete your purchase with card, Apple Pay, Klarna, and more.</p>' +
+          err +
+          '<button type="button" class="ecp-btn" data-ecp="pay"' + (ui.processing ? " disabled" : "") + ">" + (ui.processing ? "Starting secure checkout\u2026" : "Checkout \u00b7 " + money(total())) + "</button>" +
+          backBtn +
+        "</div>"
+      );
+    }
 
     if (stripeEnabled()) {
       return (

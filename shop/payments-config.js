@@ -3,16 +3,24 @@
 // The checkout works out of the box in DEMO mode (no real charges) using the
 // Stripe test card 4242 4242 4242 4242.
 //
-// To switch to LIVE Stripe Checkout (no backend required, client-only):
-//   1. Set stripePublishableKey to your key (pk_live_... or pk_test_...).
-//   2. Create a Stripe Price for each product and map its SKU -> price ID below.
-// When both are present for every item in the cart, checkout redirects to
-// Stripe's hosted, PCI-compliant payment page instead of the demo form.
+// === Enable REAL purchases ===
 //
-// Klarna: enable Klarna in your Stripe Dashboard (Settings > Payment methods)
-// and it appears automatically on the Stripe Checkout page. The built-in demo
-// checkout also offers a simulated Klarna "Pay in 4" option.
+// Option A (recommended for a multi-item cart) — server-side Stripe Checkout:
+//   1. Deploy the serverless function in ../serverless/ (see serverless/README.md)
+//      with your Stripe SECRET key and a SKU -> Price ID map.
+//   2. Set checkoutEndpoint below to that function's public URL.
+//   When set, "Checkout" redirects to Stripe's hosted, PCI-compliant page and
+//   charges real money. Card, Apple Pay, and Klarna are enabled from your
+//   Stripe Dashboard and appear automatically there.
+//
+// Option B (no backend, if your Stripe account supports client-only Checkout):
+//   Set stripePublishableKey and a per-SKU `prices` map. Checkout then uses
+//   Stripe.js redirectToCheckout directly.
 window.PAYMENTS_CONFIG = {
+  // Option A: URL of your deployed Checkout Session function (leave empty to disable).
+  checkoutEndpoint: "",
+
+  // Option B: client-only Stripe Checkout.
   stripePublishableKey: "",
   prices: {
     // "EC-BANDIT": "price_123",
