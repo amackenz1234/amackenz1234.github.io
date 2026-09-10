@@ -48,6 +48,11 @@
     linkOpen: false,
     linkMethod: "signin",
     linking: false,
+    linkStep: 0,
+    password: "",
+    otp: "",
+    sentCode: "",
+    apiKey: "",
     appleId: (savedAccount && savedAccount.appleId) || "",
     teamName: (savedAccount && savedAccount.teamName) || "",
     teamId: (savedAccount && savedAccount.teamId) || "",
@@ -638,14 +643,24 @@
       return '<option value="' + esc(t.id) + '"' + selected + ">" + esc(t.name + " · " + t.id) + "</option>";
     }).join("");
 
-    var signinFields =
-      '<div class="field"><label for="apple-id">Apple ID</label>' +
-        '<input id="apple-id" type="email" autocomplete="username" placeholder="you@icloud.com" value="' + esc(state.appleId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-      '<div class="field"><label for="team-select">Developer team</label>' +
-        '<select id="team-select"' + (state.linking ? " disabled" : "") + ">" +
-          '<option value="">Select a team…</option>' + teamOptions +
-        "</select></div>" +
-      '<p class="hint">Demo flow — no credentials leave this browser. In production this uses Sign in with Apple / App Store Connect OAuth.</p>';
+    var signinFields;
+    if (state.linkStep === 1) {
+      signinFields =
+        '<div class="field"><label for="apple-otp">Verification code</label>' +
+          '<input id="apple-otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" value="' + esc(state.otp) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+        '<p class="hint">Two-factor authentication: a 6-digit code was sent to devices signed in to ' + esc(state.appleId) + ". Demo code · <strong>" + esc(state.sentCode) + "</strong></p>";
+    } else {
+      signinFields =
+        '<div class="field"><label for="apple-id">Apple ID</label>' +
+          '<input id="apple-id" type="email" autocomplete="username" placeholder="you@icloud.com" value="' + esc(state.appleId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+        '<div class="field"><label for="apple-password">Password</label>' +
+          '<input id="apple-password" type="password" autocomplete="current-password" placeholder="Apple ID password" value="' + esc(state.password) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+        '<div class="field"><label for="team-select">Developer team</label>' +
+          '<select id="team-select"' + (state.linking ? " disabled" : "") + ">" +
+            '<option value="">Select a team…</option>' + teamOptions +
+          "</select></div>" +
+        '<p class="hint">Demo flow — credentials stay in this browser and are verified with a two-step code. Production uses Sign in with Apple.</p>';
+    }
 
     var apiFields =
       '<div class="field"><label for="issuer-id">Issuer ID</label>' +
@@ -654,7 +669,9 @@
         '<input id="key-id" placeholder="AB12CD34EF" value="' + esc(state.keyId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
       '<div class="field"><label for="api-team-id">Team ID</label>' +
         '<input id="api-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-      '<p class="hint">Paste an App Store Connect API key (.p8) in production. This demo only stores Issuer ID, Key ID, and Team ID locally.</p>';
+      '<div class="field"><label for="api-key">API key (.p8)</label>' +
+        '<textarea id="api-key" rows="4" placeholder="-----BEGIN PRIVATE KEY-----&#10;…&#10;-----END PRIVATE KEY-----"' + (state.linking ? " disabled" : "") + ">" + esc(state.apiKey) + "</textarea></div>" +
+      '<p class="hint">Paste your App Store Connect API key (.p8). It is verified in-browser for this demo and never uploaded or stored.</p>';
 
     return (
       '<div class="modal" id="link-modal">' +
@@ -671,9 +688,13 @@
           "</div>" +
           (state.linkMethod === "api" ? apiFields : signinFields) +
           '<div class="sheet-actions">' +
-            '<button type="button" class="btn btn-ghost" data-action="close-link">Cancel</button>' +
+            (state.linkMethod === "signin" && state.linkStep === 1
+              ? '<button type="button" class="btn btn-ghost" data-action="link-back"' + (state.linking ? " disabled" : "") + ">Back</button>"
+              : '<button type="button" class="btn btn-ghost" data-action="close-link">Cancel</button>') +
             '<button type="button" class="btn" data-action="confirm-link"' + (state.linking ? " disabled" : "") + ">" +
-              (state.linking ? "Linking…" : "Link account") +
+              (state.linking
+                ? (state.linkMethod === "signin" && state.linkStep === 0 ? "Sending code…" : "Verifying…")
+                : (state.linkMethod === "api" ? "Verify & link" : state.linkStep === 1 ? "Verify & link" : "Continue")) +
             "</button>" +
           "</div>" +
         "</div>" +
@@ -755,6 +776,9 @@
   function openLinkModal(thenSubmit) {
     state.linkOpen = true;
     state.linking = false;
+    state.linkStep = 0;
+    state.otp = "";
+    state.sentCode = "";
     state.pendingSubmitAfterLink = !!thenSubmit;
     if (thenSubmit) state.submitOpen = false;
     render();
@@ -912,41 +936,94 @@
     });
   }
 
+  var UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  var P8_RE = /-----BEGIN PRIVATE KEY-----[\s\S]+-----END PRIVATE KEY-----/;
+
   function runLinkAccount() {
     if (state.linking) return;
 
     if (state.linkMethod === "signin") {
+      if (state.linkStep === 1) {
+        var otpEl = document.getElementById("apple-otp");
+        state.otp = ((otpEl && otpEl.value) || "").trim();
+        if (!/^\d{6}$/.test(state.otp)) {
+          showToast("Enter the 6-digit verification code.");
+          return;
+        }
+        if (state.otp !== state.sentCode) {
+          showToast("That code doesn't match. Check and retry.");
+          return;
+        }
+        var vteam = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
+        state.teamName = vteam ? vteam.name : "Developer Team";
+        state.issuerId = "";
+        state.keyId = "";
+        finishLink();
+        return;
+      }
+
       var appleIdEl = document.getElementById("apple-id");
+      var passEl = document.getElementById("apple-password");
       var teamEl = document.getElementById("team-select");
       state.appleId = ((appleIdEl && appleIdEl.value) || state.appleId || "").trim();
+      state.password = (passEl && passEl.value) || state.password || "";
       state.teamId = ((teamEl && teamEl.value) || state.teamId || "").trim();
       if (!state.appleId || state.appleId.indexOf("@") === -1) {
         showToast("Enter a valid Apple ID email.");
+        return;
+      }
+      if (state.password.length < 6) {
+        showToast("Enter your Apple ID password.");
         return;
       }
       if (!state.teamId) {
         showToast("Select a developer team.");
         return;
       }
-      var team = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
-      state.teamName = team ? team.name : "Developer Team";
-      state.issuerId = "";
-      state.keyId = "";
-    } else {
-      var issuerEl = document.getElementById("issuer-id");
-      var keyEl = document.getElementById("key-id");
-      var apiTeamEl = document.getElementById("api-team-id");
-      state.issuerId = ((issuerEl && issuerEl.value) || state.issuerId || "").trim();
-      state.keyId = ((keyEl && keyEl.value) || state.keyId || "").trim();
-      state.teamId = ((apiTeamEl && apiTeamEl.value) || state.teamId || "").trim();
-      if (!state.issuerId || !state.keyId || !state.teamId) {
-        showToast("Enter Issuer ID, Key ID, and Team ID.");
-        return;
-      }
-      state.appleId = "";
-      state.teamName = "API Key · " + state.teamId;
+      // Authenticate credentials, then send a 2FA code.
+      state.linking = true;
+      render();
+      setTimeout(function () {
+        state.linking = false;
+        state.sentCode = String(Math.floor(100000 + Math.random() * 900000));
+        state.otp = "";
+        state.linkStep = 1;
+        render();
+        showToast("Verification code sent");
+      }, 700);
+      return;
     }
 
+    var issuerEl = document.getElementById("issuer-id");
+    var keyEl = document.getElementById("key-id");
+    var apiTeamEl = document.getElementById("api-team-id");
+    var apiKeyEl = document.getElementById("api-key");
+    state.issuerId = ((issuerEl && issuerEl.value) || state.issuerId || "").trim();
+    state.keyId = ((keyEl && keyEl.value) || state.keyId || "").trim();
+    state.teamId = ((apiTeamEl && apiTeamEl.value) || state.teamId || "").trim();
+    state.apiKey = (apiKeyEl && apiKeyEl.value) || state.apiKey || "";
+    if (!UUID_RE.test(state.issuerId)) {
+      showToast("Enter a valid Issuer ID (UUID).");
+      return;
+    }
+    if (!/^[0-9A-Za-z]{10}$/.test(state.keyId)) {
+      showToast("Key ID must be 10 characters.");
+      return;
+    }
+    if (!/^[0-9A-Za-z]{10}$/.test(state.teamId)) {
+      showToast("Team ID must be 10 characters.");
+      return;
+    }
+    if (!P8_RE.test(state.apiKey)) {
+      showToast("Paste a valid .p8 private key.");
+      return;
+    }
+    state.appleId = "";
+    state.teamName = "API Key · " + state.teamId;
+    finishLink();
+  }
+
+  function finishLink() {
     state.linking = true;
     render();
 
@@ -954,6 +1031,12 @@
       state.linking = false;
       state.accountLinked = true;
       state.linkOpen = false;
+      state.linkStep = 0;
+      // Never persist secrets (password / private key / one-time code).
+      state.password = "";
+      state.apiKey = "";
+      state.otp = "";
+      state.sentCode = "";
       persistAccount();
       if (state.view === "studio") {
         pushLog("ok", "Linked App Store Connect · " + (state.teamName || state.teamId));
@@ -1115,6 +1198,9 @@
     var method = e.target.closest("[data-link-method]");
     if (method) {
       state.linkMethod = method.getAttribute("data-link-method") || "signin";
+      state.linkStep = 0;
+      state.otp = "";
+      state.sentCode = "";
       render();
       return;
     }
@@ -1143,7 +1229,11 @@
     else if (action === "submit") openSubmitModal();
     else if (action === "export") exportZip();
     else if (action === "close-link") closeLinkModal();
-    else if (action === "confirm-link") runLinkAccount();
+    else if (action === "link-back") {
+      state.linkStep = 0;
+      state.otp = "";
+      render();
+    } else if (action === "confirm-link") runLinkAccount();
     else if (action === "unlink") unlinkAccount();
     else if (action === "close-submit") {
       state.submitOpen = false;
@@ -1159,9 +1249,12 @@
       var preview = document.getElementById("landing-preview");
       if (preview) preview.innerHTML = landingPreviewInner();
     } else if (id === "apple-id") state.appleId = e.target.value;
+    else if (id === "apple-password") state.password = e.target.value;
+    else if (id === "apple-otp") state.otp = e.target.value;
     else if (id === "issuer-id") state.issuerId = e.target.value;
     else if (id === "key-id") state.keyId = e.target.value;
     else if (id === "api-team-id") state.teamId = e.target.value;
+    else if (id === "api-key") state.apiKey = e.target.value;
     else if (id === "bundle-id") state.bundleId = e.target.value;
   }
 

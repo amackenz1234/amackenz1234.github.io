@@ -614,14 +614,17 @@ img { display: block; max-width: 100%; }
 .sheet p { color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
 .field { display: grid; gap: 6px; margin-bottom: 12px; }
 .field label { font-size: 0.82rem; color: var(--mist); font-weight: 600; }
-.field input, .field select {
+.field input, .field select, .field textarea {
   border: 1px solid var(--line);
   background: rgba(0, 0, 0, 0.25);
   border-radius: 10px;
   padding: 11px 12px;
   outline: none;
+  color: inherit;
+  font: inherit;
 }
-.field input:focus, .field select:focus { border-color: rgba(62, 224, 196, 0.5); }
+.field textarea { resize: vertical; min-height: 84px; font-family: ui-monospace, "JetBrains Mono", monospace; font-size: 0.82rem; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: rgba(62, 224, 196, 0.5); }
 .steps { display: grid; gap: 8px; margin: 14px 0 18px; }
 .step {
   display: grid;
