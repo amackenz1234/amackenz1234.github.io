@@ -29,8 +29,8 @@ concurrency:
 
 jobs:
   build:
-    name: Cloud Mac (macOS 27 RC + Xcode 27)
-    # GitHub-hosted Apple Silicon Mac on macOS 27 RC with Xcode 27.
+    name: Full Cloud Mac (macOS 27 RC)
+    # Full GitHub-hosted macOS 27 RC VM on Apple Silicon (xcode-27 image).
     # https://github.blog/changelog/2026-07-16-xcode-27-runner-image-now-in-public-preview/
     runs-on: xcode-27
     defaults:
@@ -45,7 +45,7 @@ jobs:
         with:
           xcode-version: "27"
 
-      - name: Require macOS 27 RC, Apple Silicon, and Xcode 27
+      - name: Require full macOS 27 RC, Apple Silicon, and Xcode 27
         working-directory: ${{ github.workspace }}
         run: bash scripts/require-cloud-xcode.sh
 
@@ -81,7 +81,7 @@ jobs:
         with:
           xcode-version: "27"
 
-      - name: Require macOS 27 RC, Apple Silicon, and Xcode 27
+      - name: Require full macOS 27 RC, Apple Silicon, and Xcode 27
         working-directory: ${{ github.workspace }}
         run: bash scripts/require-cloud-xcode.sh
 
