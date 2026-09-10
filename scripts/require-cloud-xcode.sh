@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Fail the cloud Mac job unless this is Apple Silicon, macOS 27 RC, and Xcode 27.
+# Fail unless this is a full macOS 27 RC install on Apple Silicon with Xcode 27.
+# The xcode-27 runner is a complete macOS VM (not a toolchain-only sandbox).
 set -euo pipefail
 
 ARCH="$(uname -m)"
@@ -9,13 +10,47 @@ if [[ "${ARCH}" != "arm64" ]]; then
   exit 1
 fi
 
-OS_VER="$(sw_vers -productVersion 2>/dev/null || true)"
-OS_BUILD="$(sw_vers -buildVersion 2>/dev/null || true)"
-echo "macOS ${OS_VER} (${OS_BUILD})"
-if [[ ! "${OS_VER}" =~ ^27(\.|$) ]]; then
-  echo "::error::Expected macOS 27 RC (ProductVersion 27.x), got ${OS_VER:-unknown}"
+KERNEL="$(uname -s)"
+if [[ "${KERNEL}" != "Darwin" ]]; then
+  echo "::error::Full macOS requires a Darwin kernel, got ${KERNEL}"
   exit 1
 fi
+
+OS_NAME="$(sw_vers -productName 2>/dev/null || true)"
+OS_VER="$(sw_vers -productVersion 2>/dev/null || true)"
+OS_BUILD="$(sw_vers -buildVersion 2>/dev/null || true)"
+echo "ProductName: ${OS_NAME}"
+echo "macOS ${OS_VER} (${OS_BUILD})"
+
+if [[ "${OS_NAME}" != "macOS" && "${OS_NAME}" != "Mac OS X" ]]; then
+  echo "::error::Expected the full macOS operating system, got ${OS_NAME:-unknown}"
+  exit 1
+fi
+
+if [[ ! "${OS_VER}" =~ ^27(\.|$) ]]; then
+  echo "::error::Expected full macOS 27 RC (ProductVersion 27.x), got ${OS_VER:-unknown}"
+  exit 1
+fi
+
+if [[ ! -f /System/Library/CoreServices/SystemVersion.plist ]]; then
+  echo "::error::SystemVersion.plist missing — this is not a full macOS install"
+  exit 1
+fi
+
+if [[ ! -d /System/Library/CoreServices || ! -d /Applications || ! -d /System/Library ]]; then
+  echo "::error::Core macOS system directories are missing"
+  exit 1
+fi
+
+if ! command -v launchctl >/dev/null 2>&1; then
+  echo "::error::launchctl missing — this is not a full macOS install"
+  exit 1
+fi
+
+echo "---- Full macOS identity ----"
+sw_vers
+uname -a
+echo "-----------------------------"
 
 XCODE_APP=""
 for candidate in \
@@ -41,7 +76,7 @@ if [[ -n "${XCODE_APP}" ]]; then
 fi
 
 if ! command -v xcodebuild >/dev/null 2>&1; then
-  echo "::error::Xcode 27 is not installed on this cloud Mac"
+  echo "::error::Xcode 27 is not installed on this full macOS cloud Mac"
   exit 1
 fi
 
@@ -57,4 +92,4 @@ if [[ ! "${VERSION}" =~ ^Xcode[[:space:]]+27 ]]; then
   exit 1
 fi
 
-echo "macOS 27 RC + Xcode 27 are installed on the Apple Silicon cloud Mac"
+echo "Full macOS 27 RC + Xcode 27 are running on the Apple Silicon cloud Mac"

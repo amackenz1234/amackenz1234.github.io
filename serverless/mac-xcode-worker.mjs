@@ -2,8 +2,8 @@
 //
 // The GitHub Pages site talks to this function. It does not need a Mac
 // on your desk. Compiles are dispatched to a GitHub-hosted xcode-27
-// runner (Apple Silicon) on macOS 27 RC with Xcode 27. The workflow
-// refuses to start if macOS 27 or Xcode 27 is missing.
+// runner — a full macOS 27 RC install on Apple Silicon, plus Xcode 27.
+// The workflow refuses to start if the full OS or Xcode 27 is missing.
 //
 // Env:
 //   NATIV_MAC_TOKEN   — optional shared secret (Authorization: Bearer …)
@@ -11,7 +11,7 @@
 //   MOCK_MAC          — "1" for local/demo (no GitHub dispatch)
 //   MAC_NAME          — display name (default "Nativ Cloud Mac")
 //   XCODE_VERSION     — label shown in /health (default "Xcode 27")
-//   MAC_OS            — label shown in /health (default "macOS 27 RC")
+//   MAC_OS            — label shown in /health (default "Full macOS 27 RC")
 //   GITHUB_TOKEN      — PAT or Actions token with actions:write
 //   GITHUB_OWNER      — repo owner (e.g. amackenz1234)
 //   GITHUB_REPO       — repo name (e.g. amackenz1234.github.io)
@@ -20,8 +20,8 @@
 
 const DEFAULT_NAME = "Nativ Cloud Mac";
 const DEFAULT_XCODE = "Xcode 27";
-const DEFAULT_OS = "macOS 27 RC";
-const DEFAULT_PROVIDER = "GitHub-hosted xcode-27 (macOS 27 RC, Apple Silicon)";
+const DEFAULT_OS = "Full macOS 27 RC";
+const DEFAULT_PROVIDER = "GitHub-hosted xcode-27 (full macOS 27 RC, Apple Silicon)";
 
 export function authorize(expectedToken, provided) {
   const expected = String(expectedToken || "");
@@ -43,10 +43,24 @@ export function requireMacOS27(info) {
   info = info || {};
   const version = String(info.osVersion || info.os || "");
   if (info.osInstalled === false) {
-    return { ok: false, error: "macOS 27 RC is not installed on this cloud Mac." };
+    return { ok: false, error: "Full macOS 27 RC is not installed on this cloud Mac." };
   }
-  if (version && !/^macOS\s*27/i.test(version) && !/^27(\.|$)/.test(version)) {
-    return { ok: false, error: "Expected macOS 27 RC, got " + version + "." };
+  if (version && !/macOS\s*27/i.test(version) && !/^27(\.|$)/.test(version)) {
+    return { ok: false, error: "Expected full macOS 27 RC, got " + version + "." };
+  }
+  return { ok: true };
+}
+
+export function requireFullMacOS(info) {
+  info = info || {};
+  const versionCheck = requireMacOS27(info);
+  if (!versionCheck.ok) return versionCheck;
+  const product = String(info.productName || "macOS");
+  if (!/^macOS$/i.test(product) && product !== "Mac OS X") {
+    return { ok: false, error: "Expected the full macOS operating system, got " + product + "." };
+  }
+  if (info.fullOs === false) {
+    return { ok: false, error: "Cloud Mac must run the full macOS operating system." };
   }
   return { ok: true };
 }
@@ -60,7 +74,7 @@ export function inspectHost(info) {
   if (!info.mock && info.cloud !== true && info.xcodeInstalled === false) {
     return { ok: false, error: "Xcode is not installed on this cloud Mac." };
   }
-  const osCheck = requireMacOS27(info);
+  const osCheck = requireFullMacOS(info);
   if (!osCheck.ok && !info.mock && info.cloud !== true) {
     return osCheck;
   }
@@ -79,6 +93,8 @@ export function inspectHost(info) {
     name: info.name || DEFAULT_NAME,
     provider: info.provider || DEFAULT_PROVIDER,
     os: info.os || DEFAULT_OS,
+    productName: info.productName || "macOS",
+    fullOs: info.fullOs !== false,
     xcode,
   };
 }
@@ -95,6 +111,8 @@ export function cloudMacInfo(env) {
     xcode: env.XCODE_VERSION || DEFAULT_XCODE,
     xcodeInstalled: true,
     osInstalled: true,
+    productName: "macOS",
+    fullOs: true,
   });
 }
 
@@ -120,7 +138,7 @@ export function buildDispatchBody(ref, inputs) {
 export function mockCompileLogs(appName, files) {
   const names = Object.keys(files || {}).filter((f) => /\.swift$/.test(f));
   const logs = [
-    "Provisioning Nativ Cloud Mac (macOS 27 RC, Apple Silicon, arm64)…",
+    "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…",
     "Xcode 27 selected · iPhoneSimulator 27.0 SDK",
     "$ xcodebuild -scheme " + appName + " -destination 'platform=iOS Simulator,name=iPhone 17'",
     "Compiling Swift module " + appName + " on cloud Apple Silicon…",
@@ -174,7 +192,7 @@ export async function dispatchCloudCompile(env, body, fetchFn) {
     name: env.MAC_NAME || DEFAULT_NAME,
     logs: [
       "Dispatched compile to " + DEFAULT_PROVIDER,
-      "Runner: xcode-27 · macOS 27 RC · arch arm64 · Xcode 27 required",
+      "Runner: xcode-27 · full macOS 27 RC · arch arm64 · Xcode 27 required",
       "Workflow: " + workflow + " on " + owner + "/" + repo,
       "Scheme: " + ((body && body.appName) || "MyApp"),
     ],
@@ -219,7 +237,7 @@ export async function handleCompile(env, body, deps) {
     xcode: host.xcode,
     logs: dispatched.logs.concat([
       "** BUILD QUEUED **",
-      "Cloud Mac will run xcodebuild with Xcode installed",
+      "Cloud Mac will run xcodebuild on full macOS 27 RC",
     ]),
   };
 }

@@ -104,12 +104,14 @@ when `TRUSTED_PHONE` is configured on the server — the text always goes to you
 
 ## Nativ Cloud Mac (Apple Silicon + Xcode)
 
-Nativ compiles on a **cloud** Apple Silicon Mac — a GitHub-hosted `xcode-27`
-runner on **macOS 27 RC** with Xcode 27. You do not need a Mac on your desk.
+Nativ compiles on a **full cloud Mac** — a GitHub-hosted `xcode-27`
+VM running the complete **macOS 27 RC** operating system with Xcode 27.
+You do not need a Mac on your desk.
 
 The workflow [`.github/workflows/ios.yml`](../.github/workflows/ios.yml) selects
 Xcode, then runs [`scripts/require-cloud-xcode.sh`](../scripts/require-cloud-xcode.sh)
-and fails the job if the runner is not arm64, not macOS 27, or missing Xcode 27.
+and fails the job if the runner is not a full macOS 27 install (Darwin, ProductName
+macOS, SystemVersion.plist, launchctl), not arm64, or missing Xcode 27.
 
 ### Optional dispatcher (real Actions job from the browser)
 
