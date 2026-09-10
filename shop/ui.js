@@ -50,9 +50,12 @@ function render() {
   html += "<div class='dock'><a class='shop' href='#shop'>Shop</a><a class='call' href='tel:9053085392'>Call</a></div>";
   if (state.open) {
     var o = state.open;
+    var links = (window.PAYMENTS_CONFIG && window.PAYMENTS_CONFIG.paymentLinks) || {};
+    var buyUrl = o.qty > 0 ? (links[o.sku] || "") : "";
+    var buyBtn = buyUrl ? "<a class='btn' href='" + esc(buyUrl) + "'>Buy now</a>" : "";
     html += "<div class='modal' id='modal'><div class='sheet' id='sheet'>";
     if (o.image) html += "<img src='" + esc(o.image) + "' alt='" + esc(o.name) + "'>";
-    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'>" + (o.qty > 0 ? "<button class='btn' data-add-sku='" + esc(o.sku) + "'>Add to cart</button>" : "") + "<a class='ghost' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
+    html += "<div class='pad'><div class='tag'>" + esc(o.sku) + "</div><h2>" + esc(o.name) + "</h2><div class='price'>" + money(o.price) + "</div><p class='lede'>" + esc(o.description) + "</p><div class='row'>" + buyBtn + (o.qty > 0 ? "<button class='" + (buyUrl ? "ghost" : "btn") + "' data-add-sku='" + esc(o.sku) + "'>Add to cart</button>" : "") + "<a class='ghost' href='mailto:info@electrocycles.ca?subject=" + encodeURIComponent(o.name) + "'>Ask about this</a><button class='ghost' id='close'>Close</button></div></div></div></div>";
   }
   document.getElementById("root").innerHTML = html;
   document.getElementById("cats").onclick = function (e) {
