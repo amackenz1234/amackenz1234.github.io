@@ -1,0 +1,17 @@
+{
+  "name": "appcompiler.ai",
+  "short_name": "appcompiler.ai",
+  "description": "Build native iOS apps with AI and submit to App Store Connect",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071018",
+  "theme_color": "#071018",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -16,6 +16,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "Starting Cloud Mac virtual machine from Windows..."
 Write-Host "The Mac boots on Apple Silicon in the cloud (not Hyper-V)."
+Write-Host "To install the desktop app, run windows\appcompiler-ai-setup.exe"
 
 if ($VmEndpoint) {
   $uri = $VmEndpoint.TrimEnd("/") + "/vm"

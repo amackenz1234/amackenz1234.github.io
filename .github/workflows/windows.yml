@@ -1,0 +1,53 @@
+name: Windows installer
+
+on:
+  push:
+    paths:
+      - 'windows/**'
+      - 'index.html'
+      - 'app.js'
+      - 'styles.css'
+      - '.github/workflows/windows.yml'
+  pull_request:
+    paths:
+      - 'windows/**'
+      - 'index.html'
+      - 'app.js'
+      - 'styles.css'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+jobs:
+  exe:
+    name: Build appcompiler-ai-setup.exe
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Build Windows .exe
+        shell: bash
+        run: bash windows/build.sh
+
+      - name: Silent-install smoke test
+        shell: pwsh
+        run: |
+          $setup = Resolve-Path .\windows\appcompiler-ai-setup.exe
+          & $setup /S
+          $app = Join-Path $env:LOCALAPPDATA "Programs\appcompiler.ai\appcompiler-ai.exe"
+          if (-not (Test-Path $app)) { throw "appcompiler-ai.exe was not installed" }
+          $bytes = Get-Content -Path $app -Encoding Byte -TotalCount 2
+          if ($bytes[0] -ne 0x4D -or $bytes[1] -ne 0x5A) { throw "installed file is not a PE .exe" }
+          Write-Host "Installed $app"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: appcompiler-ai-setup.exe
+          path: windows/appcompiler-ai-setup.exe
+          if-no-files-found: error
