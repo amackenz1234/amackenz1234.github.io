@@ -869,3 +869,6 @@ img { display: block; max-width: 100%; }
 .aa-btn { background: #000; color: #fff; }
 .aa-btn:hover { background: #111; }
 .aa-foot { color: #86868b; font-size: 0.72rem; line-height: 1.4; margin-top: 16px; }
+.aa-link { background: transparent; border: 0; color: #0071e3; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 6px 4px; margin-top: 4px; }
+.aa-link:hover { text-decoration: underline; }
+.aa-link[disabled] { opacity: 0.5; cursor: default; text-decoration: none; }

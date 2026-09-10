@@ -58,6 +58,7 @@
     appleAuthEmail: "",
     appleAuthPass: "",
     appleAuthCode: "",
+    appleAuthText: false,
     appleAuthBusy: false,
     appleAuthed: false,
     appleId: (savedAccount && savedAccount.appleId) || "",
@@ -624,10 +625,16 @@
     if (!state.appleAuthOpen) return "";
     var body;
     if (state.appleAuthStep === 1) {
+      var deliver = state.appleAuthText
+        ? 'A verification code was sent by <strong>text message</strong> to your trusted phone number ending in \u2022\u20224.'
+        : "Enter the 6-digit verification code sent to your other Apple devices.";
       body =
         '<p class="aa-sub">Two-Factor Authentication</p>' +
-        '<p class="aa-text">Enter the 6-digit verification code sent to your other Apple devices.</p>' +
-        '<div class="aa-field"><input id="apple-auth-code" inputmode="numeric" maxlength="6" placeholder="Verification code" value="' + esc(state.appleAuthCode) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>";
+        '<p class="aa-text">' + deliver + "</p>" +
+        '<div class="aa-field"><input id="apple-auth-code" inputmode="numeric" maxlength="6" placeholder="Verification code" value="' + esc(state.appleAuthCode) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>" +
+        '<button type="button" class="aa-link" data-action="apple-auth-text"' + (state.appleAuthBusy ? " disabled" : "") + ">" +
+          (state.appleAuthText ? "Resend code by text message" : "Didn\u2019t get a code? Send by text message") +
+        "</button>";
     } else {
       body =
         '<p class="aa-text">developer.apple.com wants to use your Apple Account to sign in.</p>' +
@@ -813,6 +820,7 @@
     state.appleAuthStep = 0;
     state.appleAuthBusy = false;
     state.appleAuthCode = "";
+    state.appleAuthText = false;
     render();
   }
 
@@ -820,6 +828,13 @@
     state.appleAuthOpen = false;
     state.appleAuthBusy = false;
     render();
+  }
+
+  function sendAppleAuthText() {
+    if (state.appleAuthBusy) return;
+    state.appleAuthText = true;
+    render();
+    showToast("Verification code sent by text message");
   }
 
   function runAppleAuth() {
@@ -1309,6 +1324,7 @@
     else if (action === "close-link") closeLinkModal();
     else if (action === "apple-signin") openAppleAuth();
     else if (action === "apple-auth-continue") runAppleAuth();
+    else if (action === "apple-auth-text") sendAppleAuthText();
     else if (action === "close-apple-auth") closeAppleAuth();
     else if (action === "confirm-link") runLinkAccount();
     else if (action === "unlink") unlinkAccount();
