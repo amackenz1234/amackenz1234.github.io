@@ -864,17 +864,14 @@
     }
     var phoneEl = document.getElementById("apple-auth-phone");
     if (phoneEl) rememberPhone((phoneEl.value || "").trim());
-    if (!state.appleAuthPhone && !authConfig().phone) {
-      showToast("Enter your phone number to receive the code.");
-      return;
-    }
     var phone = state.appleAuthPhone || authConfig().phone || "";
+    // Phone is optional when the SMS worker has TRUSTED_PHONE configured.
     state.appleAuthBusy = true;
     render();
     fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "send", phone: phone })
+      body: JSON.stringify({ action: "send", phone: phone || undefined })
     })
       .then(function (res) {
         return res.json().then(function (data) {
