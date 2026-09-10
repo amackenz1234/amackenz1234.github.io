@@ -47,19 +47,30 @@ with `Authorization: Bearer <STRIPE_SECRET_KEY>`, and return `{ url }`.
 
 ## Apple account SMS verification
 
+Nativ’s GitHub Pages site uses a **built-in browser OTP** by default
+(`sms-otp.js` + empty `smsEndpoint` in `auth-config.js`), so linking is
+always configured without a backend. For real carrier SMS, deploy the worker
+below and set `smsEndpoint`.
+
 Nativ can text a real 6-digit code to your phone when linking an Apple Developer
 account. The worker is [`apple-sms.mjs`](./apple-sms.mjs).
+
+**SMS is sent over a plain HTTP API — Twilio is not used.** The default provider
+shape is [Telnyx](https://developers.telnyx.com/docs/messaging/messages); set
+`SMS_PROVIDER=generic` for any webhook that accepts JSON `{ to, from, text/body }`.
 
 ### Secrets
 
 - `TRUSTED_PHONE` — your number in E.164 (`+1…`). Codes are only sent here.
 - `OTP_SECRET` — random string used to HMAC-sign verification tokens.
-- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` — Twilio credentials.
-- Optional: `ALLOW_ORIGIN`, `MOCK_SMS=1` (skip Twilio, log the code), `INCLUDE_CODE=1`
-  (echo the code in JSON when mocking), `ALLOW_REQUEST_PHONE=1` (allow the browser
-  to supply the destination phone — local/dev only).
+- `SMS_API_KEY` — Bearer token for your SMS provider.
+- `SMS_FROM` — sender number (E.164) or approved sender id.
+- Optional: `SMS_API_URL` (defaults to Telnyx `https://api.telnyx.com/v2/messages`),
+  `SMS_PROVIDER` (`telnyx` | `generic`), `ALLOW_ORIGIN`, `MOCK_SMS=1` (skip the
+  API and log the code), `INCLUDE_CODE=1` (echo the code in JSON when mocking),
+  `ALLOW_REQUEST_PHONE=1` (allow the browser to supply the destination — local/dev).
 
-### Local mock (no Twilio)
+### Local mock (no SMS provider)
 
 ```bash
 TRUSTED_PHONE=+15551234567 OTP_SECRET=dev MOCK_SMS=1 INCLUDE_CODE=1 \
@@ -75,14 +86,15 @@ window.NATIV_AUTH_CONFIG = {
 };
 ```
 
-### Deploy (Cloudflare Worker)
+### Deploy (Cloudflare Worker) with Telnyx
 
 ```bash
 wrangler secret put TRUSTED_PHONE
 wrangler secret put OTP_SECRET
-wrangler secret put TWILIO_ACCOUNT_SID
-wrangler secret put TWILIO_AUTH_TOKEN
-wrangler secret put TWILIO_FROM
+wrangler secret put SMS_API_KEY
+wrangler secret put SMS_FROM
+# optional: wrangler secret put SMS_API_URL
+# optional: wrangler secret put SMS_PROVIDER   # telnyx | generic
 # entry = apple-sms.mjs
 wrangler deploy
 ```

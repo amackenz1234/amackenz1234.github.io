@@ -3,22 +3,27 @@
 // Usage:
 //   TRUSTED_PHONE=+15551234567 OTP_SECRET=dev MOCK_SMS=1 INCLUDE_CODE=1 \
 //     node serverless/apple-sms-local.mjs
-// With real Twilio:
-//   TRUSTED_PHONE=... OTP_SECRET=... TWILIO_ACCOUNT_SID=... TWILIO_AUTH_TOKEN=... \
-//   TWILIO_FROM=... node serverless/apple-sms-local.mjs
+// With Telnyx (or any HTTP SMS API):
+//   TRUSTED_PHONE=... OTP_SECRET=... SMS_API_KEY=... SMS_FROM=... \
+//   SMS_API_URL=https://api.telnyx.com/v2/messages \
+//   node serverless/apple-sms-local.mjs
 
 import http from "node:http";
 import worker, { handleSend, handleVerify } from "./apple-sms.mjs";
 
 const port = parseInt(process.env.PORT || "8787", 10);
+const hasSmsApi = !!(process.env.SMS_API_KEY && process.env.SMS_FROM);
 const env = {
   OTP_SECRET: process.env.OTP_SECRET || "nativ-dev-otp-secret",
   TRUSTED_PHONE: process.env.TRUSTED_PHONE || "",
-  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || "",
-  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || "",
-  TWILIO_FROM: process.env.TWILIO_FROM || "",
-  MOCK_SMS: process.env.MOCK_SMS || (process.env.TWILIO_ACCOUNT_SID ? "0" : "1"),
-  INCLUDE_CODE: process.env.INCLUDE_CODE || (process.env.MOCK_SMS === "1" || !process.env.TWILIO_ACCOUNT_SID ? "1" : "0"),
+  SMS_API_URL: process.env.SMS_API_URL || "",
+  SMS_API_KEY: process.env.SMS_API_KEY || "",
+  SMS_FROM: process.env.SMS_FROM || "",
+  SMS_PROVIDER: process.env.SMS_PROVIDER || "telnyx",
+  MOCK_SMS: process.env.MOCK_SMS || (hasSmsApi ? "0" : "1"),
+  INCLUDE_CODE:
+    process.env.INCLUDE_CODE ||
+    (process.env.MOCK_SMS === "1" || !hasSmsApi ? "1" : "0"),
   ALLOW_REQUEST_PHONE: process.env.ALLOW_REQUEST_PHONE || "1",
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN || "*",
 };
@@ -83,6 +88,8 @@ server.listen(port, () => {
       port +
       " mock=" +
       env.MOCK_SMS +
+      " provider=" +
+      env.SMS_PROVIDER +
       " phone=" +
       (env.TRUSTED_PHONE || "(from request)")
   );

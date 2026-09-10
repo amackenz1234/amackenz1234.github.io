@@ -6,7 +6,7 @@ import {
   generateCode,
   mintToken,
   verifyToken,
-  buildTwilioBody,
+  buildSmsPayload,
   buildSmsMessage,
   handleSend,
   handleVerify,
@@ -51,11 +51,18 @@ test("verify rejects wrong code, expired token, and garbage", async () => {
   assert.equal((await verifyToken("abc", token, secret, { now })).ok, false);
 });
 
-test("buildTwilioBody encodes To/From/Body", () => {
-  const p = buildTwilioBody("+15551112222", "+15550001111", "hi");
-  assert.equal(p.get("To"), "+15551112222");
-  assert.equal(p.get("From"), "+15550001111");
-  assert.equal(p.get("Body"), "hi");
+test("buildSmsPayload defaults to Telnyx shape", () => {
+  const p = buildSmsPayload("+15551112222", "+15550001111", "hi");
+  assert.equal(p.to, "+15551112222");
+  assert.equal(p.from, "+15550001111");
+  assert.equal(p.text, "hi");
+  assert.equal(p.Body, undefined);
+});
+
+test("buildSmsPayload generic shape includes body", () => {
+  const p = buildSmsPayload("+15551112222", "+15550001111", "hi", "generic");
+  assert.equal(p.body, "hi");
+  assert.equal(p.text, "hi");
 });
 
 test("buildSmsMessage includes the code", () => {
