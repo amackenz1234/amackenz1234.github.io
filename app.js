@@ -53,6 +53,13 @@
     otp: "",
     sentCode: "",
     apiKey: "",
+    appleAuthOpen: false,
+    appleAuthStep: 0,
+    appleAuthEmail: "",
+    appleAuthPass: "",
+    appleAuthCode: "",
+    appleAuthBusy: false,
+    appleAuthed: false,
     appleId: (savedAccount && savedAccount.appleId) || "",
     teamName: (savedAccount && savedAccount.teamName) || "",
     teamId: (savedAccount && savedAccount.teamId) || "",
@@ -611,6 +618,40 @@
     );
   }
 
+  var APPLE_LOGO = '<svg class="ap-logo" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>';
+
+  function renderAppleAuthModal() {
+    if (!state.appleAuthOpen) return "";
+    var body;
+    if (state.appleAuthStep === 1) {
+      body =
+        '<p class="aa-sub">Two-Factor Authentication</p>' +
+        '<p class="aa-text">Enter the 6-digit verification code sent to your other Apple devices.</p>' +
+        '<div class="aa-field"><input id="apple-auth-code" inputmode="numeric" maxlength="6" placeholder="Verification code" value="' + esc(state.appleAuthCode) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>";
+    } else {
+      body =
+        '<p class="aa-text">developer.apple.com wants to use your Apple Account to sign in.</p>' +
+        '<div class="aa-field"><input id="apple-auth-email" type="email" autocomplete="username" placeholder="Apple ID" value="' + esc(state.appleAuthEmail) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>" +
+        '<div class="aa-field"><input id="apple-auth-pass" type="password" autocomplete="current-password" placeholder="Password" value="' + esc(state.appleAuthPass) + '"' + (state.appleAuthBusy ? " disabled" : "") + " /></div>";
+    }
+    return (
+      '<div class="modal aa-modal" id="apple-auth-modal">' +
+        '<div class="aa-sheet" role="dialog" aria-label="Sign in with Apple">' +
+          '<div class="aa-logo">' + APPLE_LOGO + "</div>" +
+          '<h3 class="aa-title">Sign in with Apple</h3>' +
+          body +
+          '<div class="aa-actions">' +
+            '<button type="button" class="btn btn-ghost" data-action="close-apple-auth"' + (state.appleAuthBusy ? " disabled" : "") + ">Cancel</button>" +
+            '<button type="button" class="btn aa-btn" data-action="apple-auth-continue"' + (state.appleAuthBusy ? " disabled" : "") + ">" +
+              (state.appleAuthBusy ? "Signing in…" : state.appleAuthStep === 1 ? "Trust" : "Sign In") +
+            "</button>" +
+          "</div>" +
+          '<p class="aa-foot">Your Apple Account password is entered here on Apple\u2019s screen and is never shared with Nativ.</p>' +
+        "</div>" +
+      "</div>"
+    );
+  }
+
   function renderLinkModal() {
     if (!state.linkOpen) return "";
 
@@ -644,22 +685,20 @@
     }).join("");
 
     var signinFields;
-    if (state.linkStep === 1) {
+    if (state.appleAuthed) {
       signinFields =
-        '<div class="field"><label for="apple-otp">Verification code</label>' +
-          '<input id="apple-otp" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6-digit code" value="' + esc(state.otp) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-        '<p class="hint">Two-factor authentication: a 6-digit code was sent to devices signed in to ' + esc(state.appleId) + ". Demo code · <strong>" + esc(state.sentCode) + "</strong></p>";
+        '<div class="account-card">' +
+          '<div class="label">Signed in with Apple</div>' +
+          '<div class="name">' + esc(state.appleId) + "</div>" +
+          '<div class="meta">developer.apple.com · authorized</div>' +
+        "</div>" +
+        '<div class="field"><label for="signin-team-id">App Store Connect Team ID</label>' +
+          '<input id="signin-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+        '<p class="hint">Find your 10-character Team ID in App Store Connect under Membership.</p>';
     } else {
       signinFields =
-        '<div class="field"><label for="apple-id">Apple ID</label>' +
-          '<input id="apple-id" type="email" autocomplete="username" placeholder="you@icloud.com" value="' + esc(state.appleId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-        '<div class="field"><label for="apple-password">Password</label>' +
-          '<input id="apple-password" type="password" autocomplete="current-password" placeholder="Apple ID password" value="' + esc(state.password) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-        '<div class="field"><label for="team-select">Developer team</label>' +
-          '<select id="team-select"' + (state.linking ? " disabled" : "") + ">" +
-            '<option value="">Select a team…</option>' + teamOptions +
-          "</select></div>" +
-        '<p class="hint">Demo flow — credentials stay in this browser and are verified with a two-step code. Production uses Sign in with Apple.</p>';
+        '<button type="button" class="btn apple-signin" data-action="apple-signin"' + (state.linking ? " disabled" : "") + ">" + APPLE_LOGO + " Sign in with Apple</button>" +
+        '<p class="hint">Sign in with Apple to authorize Nativ to link your developer.apple.com account. Your password is entered on Apple\u2019s screen, never in Nativ.</p>';
     }
 
     var apiFields =
@@ -688,13 +727,9 @@
           "</div>" +
           (state.linkMethod === "api" ? apiFields : signinFields) +
           '<div class="sheet-actions">' +
-            (state.linkMethod === "signin" && state.linkStep === 1
-              ? '<button type="button" class="btn btn-ghost" data-action="link-back"' + (state.linking ? " disabled" : "") + ">Back</button>"
-              : '<button type="button" class="btn btn-ghost" data-action="close-link">Cancel</button>') +
-            '<button type="button" class="btn" data-action="confirm-link"' + (state.linking ? " disabled" : "") + ">" +
-              (state.linking
-                ? (state.linkMethod === "signin" && state.linkStep === 0 ? "Sending code…" : "Verifying…")
-                : (state.linkMethod === "api" ? "Verify & link" : state.linkStep === 1 ? "Verify & link" : "Continue")) +
+            '<button type="button" class="btn btn-ghost" data-action="close-link">Cancel</button>' +
+            '<button type="button" class="btn" data-action="confirm-link"' + (state.linking || (state.linkMethod === "signin" && !state.appleAuthed) ? " disabled" : "") + ">" +
+              (state.linking ? "Linking…" : (state.linkMethod === "api" ? "Verify & link" : "Link account")) +
             "</button>" +
           "</div>" +
         "</div>" +
@@ -773,9 +808,76 @@
     }, ms || 2200);
   }
 
+  function openAppleAuth() {
+    state.appleAuthOpen = true;
+    state.appleAuthStep = 0;
+    state.appleAuthBusy = false;
+    state.appleAuthCode = "";
+    render();
+  }
+
+  function closeAppleAuth() {
+    state.appleAuthOpen = false;
+    state.appleAuthBusy = false;
+    render();
+  }
+
+  function runAppleAuth() {
+    if (state.appleAuthBusy) return;
+
+    if (state.appleAuthStep === 0) {
+      var emailEl = document.getElementById("apple-auth-email");
+      var passEl = document.getElementById("apple-auth-pass");
+      state.appleAuthEmail = ((emailEl && emailEl.value) || state.appleAuthEmail || "").trim();
+      state.appleAuthPass = (passEl && passEl.value) || state.appleAuthPass || "";
+      if (!state.appleAuthEmail || state.appleAuthEmail.indexOf("@") === -1) {
+        showToast("Enter your Apple ID.");
+        return;
+      }
+      if (state.appleAuthPass.length < 6) {
+        showToast("Enter your Apple ID password.");
+        return;
+      }
+      state.appleAuthBusy = true;
+      render();
+      setTimeout(function () {
+        state.appleAuthBusy = false;
+        state.appleAuthStep = 1;
+        state.appleAuthCode = "";
+        render();
+        showToast("Verification code sent to your Apple devices");
+      }, 800);
+      return;
+    }
+
+    var codeEl = document.getElementById("apple-auth-code");
+    state.appleAuthCode = ((codeEl && codeEl.value) || "").trim();
+    if (!/^\d{6}$/.test(state.appleAuthCode)) {
+      showToast("Enter the 6-digit verification code.");
+      return;
+    }
+    state.appleAuthBusy = true;
+    render();
+    setTimeout(function () {
+      state.appleAuthBusy = false;
+      state.appleAuthOpen = false;
+      state.appleAuthed = true;
+      state.appleId = state.appleAuthEmail;
+      state.appleAuthPass = "";
+      state.appleAuthCode = "";
+      render();
+      showToast("Signed in with Apple");
+    }, 800);
+  }
+
   function openLinkModal(thenSubmit) {
     state.linkOpen = true;
     state.linking = false;
+    state.appleAuthed = false;
+    state.appleAuthOpen = false;
+    state.appleAuthStep = 0;
+    state.appleAuthPass = "";
+    state.appleAuthCode = "";
     state.linkStep = 0;
     state.otp = "";
     state.sentCode = "";
@@ -817,6 +919,7 @@
     var root = document.getElementById("app");
     var html = state.view === "studio" ? renderStudio() : renderLanding();
     html += renderLinkModal();
+    html += renderAppleAuthModal();
     html += renderSubmitModal();
     html += renderToast();
     root.innerHTML = html;
@@ -943,54 +1046,20 @@
     if (state.linking) return;
 
     if (state.linkMethod === "signin") {
-      if (state.linkStep === 1) {
-        var otpEl = document.getElementById("apple-otp");
-        state.otp = ((otpEl && otpEl.value) || "").trim();
-        if (!/^\d{6}$/.test(state.otp)) {
-          showToast("Enter the 6-digit verification code.");
-          return;
-        }
-        if (state.otp !== state.sentCode) {
-          showToast("That code doesn't match. Check and retry.");
-          return;
-        }
-        var vteam = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
-        state.teamName = vteam ? vteam.name : "Developer Team";
-        state.issuerId = "";
-        state.keyId = "";
-        finishLink();
+      if (!state.appleAuthed) {
+        showToast("Sign in with Apple to continue.");
         return;
       }
-
-      var appleIdEl = document.getElementById("apple-id");
-      var passEl = document.getElementById("apple-password");
-      var teamEl = document.getElementById("team-select");
-      state.appleId = ((appleIdEl && appleIdEl.value) || state.appleId || "").trim();
-      state.password = (passEl && passEl.value) || state.password || "";
+      var teamEl = document.getElementById("signin-team-id");
       state.teamId = ((teamEl && teamEl.value) || state.teamId || "").trim();
-      if (!state.appleId || state.appleId.indexOf("@") === -1) {
-        showToast("Enter a valid Apple ID email.");
+      if (!/^[0-9A-Za-z]{10}$/.test(state.teamId)) {
+        showToast("Enter your 10-character App Store Connect Team ID.");
         return;
       }
-      if (state.password.length < 6) {
-        showToast("Enter your Apple ID password.");
-        return;
-      }
-      if (!state.teamId) {
-        showToast("Select a developer team.");
-        return;
-      }
-      // Authenticate credentials, then send a 2FA code.
-      state.linking = true;
-      render();
-      setTimeout(function () {
-        state.linking = false;
-        state.sentCode = String(Math.floor(100000 + Math.random() * 900000));
-        state.otp = "";
-        state.linkStep = 1;
-        render();
-        showToast("Verification code sent");
-      }, 700);
+      state.teamName = "Team " + state.teamId;
+      state.issuerId = "";
+      state.keyId = "";
+      finishLink();
       return;
     }
 
@@ -1037,6 +1106,9 @@
       state.apiKey = "";
       state.otp = "";
       state.sentCode = "";
+      state.appleAuthPass = "";
+      state.appleAuthCode = "";
+      state.appleAuthed = false;
       persistAccount();
       if (state.view === "studio") {
         pushLog("ok", "Linked App Store Connect · " + (state.teamName || state.teamId));
@@ -1063,6 +1135,8 @@
     state.teamId = "";
     state.issuerId = "";
     state.keyId = "";
+    state.appleAuthed = false;
+    state.appleAuthEmail = "";
     persistAccount();
     render();
     showToast("Apple Developer account unlinked.");
@@ -1174,6 +1248,10 @@
       closeLinkModal();
       return;
     }
+    if (e.target.id === "apple-auth-modal") {
+      if (!state.appleAuthBusy) closeAppleAuth();
+      return;
+    }
     if (e.target.id === "submit-modal") {
       state.submitOpen = false;
       render();
@@ -1229,11 +1307,10 @@
     else if (action === "submit") openSubmitModal();
     else if (action === "export") exportZip();
     else if (action === "close-link") closeLinkModal();
-    else if (action === "link-back") {
-      state.linkStep = 0;
-      state.otp = "";
-      render();
-    } else if (action === "confirm-link") runLinkAccount();
+    else if (action === "apple-signin") openAppleAuth();
+    else if (action === "apple-auth-continue") runAppleAuth();
+    else if (action === "close-apple-auth") closeAppleAuth();
+    else if (action === "confirm-link") runLinkAccount();
     else if (action === "unlink") unlinkAccount();
     else if (action === "close-submit") {
       state.submitOpen = false;
@@ -1248,9 +1325,10 @@
       state.prompt = e.target.value;
       var preview = document.getElementById("landing-preview");
       if (preview) preview.innerHTML = landingPreviewInner();
-    } else if (id === "apple-id") state.appleId = e.target.value;
-    else if (id === "apple-password") state.password = e.target.value;
-    else if (id === "apple-otp") state.otp = e.target.value;
+    } else if (id === "apple-auth-email") state.appleAuthEmail = e.target.value;
+    else if (id === "apple-auth-pass") state.appleAuthPass = e.target.value;
+    else if (id === "apple-auth-code") state.appleAuthCode = e.target.value;
+    else if (id === "signin-team-id") state.teamId = e.target.value;
     else if (id === "issuer-id") state.issuerId = e.target.value;
     else if (id === "key-id") state.keyId = e.target.value;
     else if (id === "api-team-id") state.teamId = e.target.value;

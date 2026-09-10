@@ -823,3 +823,49 @@ img { display: block; max-width: 100%; }
   .pane { max-height: none; }
   .preview-pane { min-height: 420px; }
 }
+
+/* Sign in with Apple */
+.ap-logo { width: 14px; height: 16px; vertical-align: -2px; display: inline-block; }
+.apple-signin {
+  width: 100%;
+  background: #000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+}
+.apple-signin .ap-logo { width: 15px; height: 18px; }
+.apple-signin:hover { background: #111; }
+.aa-modal { display: flex; align-items: flex-start; justify-content: center; }
+.aa-sheet {
+  width: min(400px, calc(100% - 32px));
+  margin: 8vh auto;
+  background: #fff;
+  color: #1d1d1f;
+  border-radius: 18px;
+  padding: 26px 24px 20px;
+  text-align: center;
+}
+.aa-logo .ap-logo { width: 34px; height: 40px; color: #1d1d1f; }
+.aa-title { font-size: 1.25rem; margin: 10px 0 4px; color: #1d1d1f; }
+.aa-sub { font-weight: 700; color: #1d1d1f; margin: 12px 0 2px; }
+.aa-text { color: #6e6e73; font-size: 0.9rem; line-height: 1.4; margin: 6px 0 16px; }
+.aa-field { margin: 8px 0; }
+.aa-field input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d2d2d7;
+  border-radius: 12px;
+  background: #f5f5f7;
+  color: #1d1d1f;
+  font-size: 1rem;
+  outline: none;
+}
+.aa-field input:focus { border-color: #0071e3; }
+.aa-actions { display: flex; gap: 10px; margin-top: 16px; }
+.aa-actions .btn { flex: 1; }
+.aa-btn { background: #000; color: #fff; }
+.aa-btn:hover { background: #111; }
+.aa-foot { color: #86868b; font-size: 0.72rem; line-height: 1.4; margin-top: 16px; }
