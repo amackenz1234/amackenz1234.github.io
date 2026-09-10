@@ -5,7 +5,7 @@
     {
       "name": "site",
       "command": "python3 -m http.server 8000",
-      "description": "Serves the Faraday / Nativ static GitHub Pages site at http://localhost:8000"
+      "description": "Serves the Faraday / appcompiler.ai static GitHub Pages site at http://localhost:8000"
     }
   ],
   "ports": [

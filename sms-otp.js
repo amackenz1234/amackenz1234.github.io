@@ -1,4 +1,4 @@
-// Built-in browser OTP for Nativ Apple linking (GitHub Pages — no backend required).
+// Built-in browser OTP for appcompiler.ai Apple linking (GitHub Pages — no backend required).
 // Used when auth-config.js has no smsEndpoint. Same HMAC token shape as serverless/apple-sms.mjs.
 (function (global) {
   "use strict";

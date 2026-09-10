@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       app_name:
-        description: App name from Nativ Cloud Mac
+        description: App name from appcompiler.ai Cloud Mac
         required: false
         default: Faraday
       reason:

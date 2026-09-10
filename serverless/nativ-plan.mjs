@@ -1,4 +1,4 @@
-// Nativ Cloud Mac monthly plan — Stripe Checkout in subscription mode.
+// appcompiler.ai Cloud Mac monthly plan — Stripe Checkout in subscription mode.
 //
 // One Product / one Price (flat monthly). Hosted Checkout collects payment.
 // Do not pass payment_method_types (dynamic payment methods).

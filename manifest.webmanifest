@@ -1,6 +1,6 @@
 {
-  "name": "Nativ",
-  "short_name": "Nativ",
+  "name": "appcompiler.ai",
+  "short_name": "appcompiler.ai",
   "description": "Build native iOS apps with AI and submit to App Store Connect",
   "start_url": "./",
   "display": "standalone",

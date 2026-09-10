@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Local Apple SMS verification server for Nativ.
+// Local Apple SMS verification server for appcompiler.ai.
 // Usage:
 //   TRUSTED_PHONE=+15551234567 OTP_SECRET=dev MOCK_SMS=1 INCLUDE_CODE=1 \
 //     node serverless/apple-sms-local.mjs

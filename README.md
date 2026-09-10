@@ -1,10 +1,10 @@
-# Nativ
+# appcompiler.ai
 
 Build native iOS apps with AI — cloud Xcode compiler and App Store Connect submit demo for GitHub Pages.
 
 ## What’s in this repo
 
-- **Nativ** (this GitHub Pages site): prompt → SwiftUI project → cloud Apple Silicon Mac (Xcode) → signed IPA on a monthly plan → App Store Connect
+- **appcompiler.ai** (this GitHub Pages site): prompt → SwiftUI project → cloud Apple Silicon Mac (Xcode) → signed IPA on a monthly plan → App Store Connect
 - Faraday sample shop: [`shop/`](shop/)
 - Native iOS catalog app: [`ios/Faraday`](ios/Faraday)
 - Catalog MCP server: [`mcp/faraday`](mcp/faraday)

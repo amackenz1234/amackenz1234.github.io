@@ -1,4 +1,4 @@
-// Nativ Cloud Mac — Apple Silicon + Xcode, hosted in the cloud.
+// appcompiler.ai Cloud Mac — Apple Silicon + Xcode, hosted in the cloud.
 //
 // Leave compileEndpoint empty to use the built-in cloud Mac console
 // (GitHub-hosted xcode-27 / full macOS 27 RC + Xcode 27). Point it at serverless/mac-xcode-worker.mjs

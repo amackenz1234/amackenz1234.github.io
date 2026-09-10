@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  var BRAND = "appcompiler.ai";
+  var CLOUD_MAC = "appcompiler.ai Cloud Mac";
+
   var EXAMPLES = [
     "A habit tracker with streaks and widgets",
     "A local cafe finder with maps and favorites",
@@ -20,7 +23,7 @@
 
   var TEAMS = [
     { id: "A1B2C3D4E5", name: "Personal Team", role: "Account Holder" },
-    { id: "X9Y8Z7W6V5", name: "Nativ Demo LLC", role: "Admin" }
+    { id: "X9Y8Z7W6V5", name: "appcompiler.ai Demo", role: "Admin" }
   ];
 
   var savedAccount = null;
@@ -96,7 +99,7 @@
       cloud: true,
       silicon: true,
       arch: "arm64",
-      name: "Nativ Cloud Mac",
+      name: CLOUD_MAC,
       provider: "GitHub-hosted xcode-27 (full macOS 27 RC, Apple Silicon)",
       os: "Full macOS 27 RC",
       fullOs: true,
@@ -209,7 +212,7 @@
       ];
     }
     return [
-      ["Getting started", "Built with Nativ"],
+      ["Getting started", "Built with appcompiler.ai"],
       ["Your first screen", "Native SwiftUI"],
       ["Ready to ship", "App Store Connect"]
     ];
@@ -420,7 +423,7 @@
     }
 
     return {
-      "NativApp.swift": appMain(appName),
+      [(appName || "App") + "App.swift"]: appMain(appName),
       "ContentView.swift":
         "import SwiftUI\n\n" +
         "struct ContentView: View {\n" +
@@ -444,7 +447,7 @@
         "    var title: String\n" +
         "    var detail: String\n\n" +
         "    static let sample = [\n" +
-        "        AppItem(title: \"Getting started\", detail: \"Built with Nativ\"),\n" +
+        "        AppItem(title: \"Getting started\", detail: \"Built with appcompiler.ai\"),\n" +
         "        AppItem(title: \"Your first screen\", detail: \"Native SwiftUI\")\n" +
         "    ]\n" +
         "}",
@@ -512,6 +515,10 @@
     return '<span class="brand-mark" aria-hidden="true"></span>';
   }
 
+  function brandWord() {
+    return 'appcompiler<span class="brand-tld">.ai</span>';
+  }
+
   function landingPreviewInner() {
     var items = previewItems(state.prompt).map(function (row) {
       return '<div class="preview-item"><strong>' + esc(row[0]) + "</strong><span>" + esc(row[1]) + "</span></div>";
@@ -538,7 +545,7 @@
 
     return (
       '<header class="site-header"><div class="wrap nav">' +
-        '<a class="brand" href="#top">' + brandMark() + "Nativ</a>" +
+        '<a class="brand" href="#top">' + brandMark() + brandWord() + "</a>" +
         '<div class="nav-links">' +
           '<a class="nav-link" href="#features">Features</a>' +
           '<a class="nav-link" href="#publish">Publish</a>' +
@@ -556,7 +563,7 @@
       "</div></header>" +
       '<section class="hero" id="top"><div class="wrap hero-grid">' +
         "<div>" +
-          '<div class="brand-hero">Nativ</div>' +
+          '<div class="brand-hero">' + brandWord() + "</div>" +
           "<h1>Build iOS apps with AI</h1>" +
           '<p class="lede">Describe your idea. Get a native Swift project, compile it in the cloud Xcode toolchain, and submit to App Store Connect.</p>' +
           '<div class="prompt-box">' +
@@ -576,7 +583,7 @@
       "</div></section>" +
       '<section class="section" id="features"><div class="wrap">' +
         "<h2>Native Swift. Real Xcode.</h2>" +
-        '<p class="lede">Not a web wrapper. Nativ generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
+        '<p class="lede">Not a web wrapper. appcompiler.ai generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
         '<div class="feature-list">' +
           "<article class=\"feature\"><h3>Full Cloud Mac</h3><p>The cloud Mac boots and runs full macOS 27 RC (launchd pid 1, Darwin, /System) with Xcode 27 — no Mac on your desk.</p></article>" +
           "<article class=\"feature\"><h3>Signed IPA</h3><p>The monthly Cloud Mac plan signs the archive on that Mac and downloads a real .ipa — not an unsigned zip.</p></article>" +
@@ -593,7 +600,7 @@
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
         "</div>" +
       "</div></section>" +
-      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Faraday sample shop</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
+      '<footer class="wrap site-footer"><span>appcompiler.ai · Native iOS with AI</span><span><a href="./shop/">Faraday sample shop</a> · Full macOS 27 RC running · Not affiliated with Apple</span></footer>' +
       (state.opening
         ? '<div class="opening-overlay"><div class="spinner" aria-hidden="true"></div><p>Generating SwiftUI project…</p></div>'
         : "")
@@ -723,7 +730,7 @@
               (state.appleAuthBusy ? "Signing in…" : state.appleAuthStep === 1 ? "Trust" : "Sign In") +
             "</button>" +
           "</div>" +
-          '<p class="aa-foot">Your Apple Account password is entered here on Apple\u2019s screen and is never shared with Nativ.</p>' +
+          '<p class="aa-foot">Your Apple Account password is entered here on Apple\u2019s screen and is never shared with appcompiler.ai.</p>' +
         "</div>" +
       "</div>"
     );
@@ -775,7 +782,7 @@
     } else {
       signinFields =
         '<button type="button" class="btn apple-signin" data-action="apple-signin"' + (state.linking ? " disabled" : "") + ">" + APPLE_LOGO + " Sign in with Apple</button>" +
-        '<p class="hint">Sign in with Apple to authorize Nativ to link your developer.apple.com account. Your password is entered on Apple\u2019s screen, never in Nativ.</p>';
+        '<p class="hint">Sign in with Apple to authorize appcompiler.ai to link your developer.apple.com account. Your password is entered on Apple\u2019s screen, never in appcompiler.ai.</p>';
     }
 
     var apiFields =
@@ -793,7 +800,7 @@
       '<div class="modal" id="link-modal">' +
         '<div class="sheet wide" role="dialog" aria-labelledby="link-title">' +
           '<h2 id="link-title">Link Apple Developer account</h2>' +
-          "<p>Connect App Store Connect so Nativ can sign builds and upload to your team.</p>" +
+          "<p>Connect App Store Connect so appcompiler.ai can sign builds and upload to your team.</p>" +
           '<div class="link-methods">' +
             '<button type="button" class="method-card' + (state.linkMethod === "signin" ? " active" : "") + '" data-link-method="signin">' +
               "<strong>Sign in with Apple</strong><span>Use your Apple ID and pick a developer team.</span>" +
@@ -842,7 +849,7 @@
       '<div class="modal" id="submit-modal">' +
         '<div class="sheet" role="dialog" aria-labelledby="submit-title">' +
           '<h2 id="submit-title">Submit to App Store Connect</h2>' +
-          "<p>Nativ prepares signing, the archive, and the ASC upload for your linked team.</p>" +
+          "<p>appcompiler.ai prepares signing, the archive, and the ASC upload for your linked team.</p>" +
           accountBlock +
           '<div class="field"><label for="bundle-id">Bundle ID</label>' +
             '<input id="bundle-id" placeholder="com.you.' + esc(state.appName.toLowerCase()) + '" value="' + esc(state.bundleId) + '"' + (done || state.submitting ? " disabled" : "") + " /></div>" +
@@ -913,7 +920,7 @@
           "<p>The cloud Mac boots the full macOS 27 RC operating system — launchd as pid 1, Darwin, /System — then compiles with Xcode 27. You do not need a Mac on your desk.</p>" +
           '<div class="account-card">' +
             '<div class="label">Operating system running</div>' +
-            '<div class="name">' + esc(info.name || "Nativ Cloud Mac") + "</div>" +
+            '<div class="name">' + esc(info.name || CLOUD_MAC) + "</div>" +
             '<div class="meta">' +
               esc(info.provider || "GitHub-hosted xcode-27") +
               "<br>OS · " + esc(info.os || "Full macOS 27 RC") + " · running" +
@@ -961,7 +968,7 @@
             cloud: true,
             silicon: true,
             arch: out.body.arch || "arm64",
-            name: out.body.name || "Nativ Cloud Mac",
+            name: out.body.name || CLOUD_MAC,
             provider: out.body.provider || state.macInfo.provider,
             os: out.body.os || "Full macOS 27 RC",
             fullOs: out.body.fullOs !== false,
@@ -1399,7 +1406,7 @@
     state.activeFile = Object.keys(state.files)[0];
     state.built = false;
     state.logs = [];
-    state.bundleId = "com.nativ." + state.appName.toLowerCase().replace(/[^a-z0-9]/g, "");
+    state.bundleId = "ai.appcompiler." + state.appName.toLowerCase().replace(/[^a-z0-9]/g, "");
   }
 
   function render() {
@@ -1503,7 +1510,7 @@
       return;
     }
 
-    pushLog("info", "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…");
+    pushLog("info", "Booting full macOS 27 RC on " + CLOUD_MAC + " (Apple Silicon, arm64)…");
     pushLog("dim", "launchd (pid 1) · Darwin kernel · system domain live");
     pushLog("ok", "Full macOS 27 RC is running");
     pushLog("dim", (state.macInfo.xcode || "Xcode 27") + " selected · iPhoneSimulator 27.0 SDK");
@@ -1554,7 +1561,7 @@
     var headers = { "Content-Type": "application/json", Accept: "application/json" };
     var token = macConfig().token;
     if (token) headers.Authorization = "Bearer " + token;
-    pushLog("info", "Dispatching compile to Nativ Cloud Mac…");
+    pushLog("info", "Dispatching compile to " + CLOUD_MAC + "…");
     fetch(endpoint + "/compile", {
       method: "POST",
       headers: headers,

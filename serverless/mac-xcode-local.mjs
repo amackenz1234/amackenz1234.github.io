@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Local stand-in for Nativ Cloud Mac (no GitHub dispatch).
+// Local stand-in for appcompiler.ai Cloud Mac (no GitHub dispatch).
 // Usage:
 //   MOCK_MAC=1 node serverless/mac-xcode-local.mjs
 
@@ -9,7 +9,7 @@ import worker, { handleCompile, handleHealth } from "./mac-xcode-worker.mjs";
 const port = parseInt(process.env.PORT || "8788", 10);
 const env = {
   MOCK_MAC: process.env.MOCK_MAC || "1",
-  MAC_NAME: process.env.MAC_NAME || "Nativ Cloud Mac",
+  MAC_NAME: process.env.MAC_NAME || "appcompiler.ai Cloud Mac",
   XCODE_VERSION: process.env.XCODE_VERSION || "Xcode 27",
   NATIV_MAC_TOKEN: process.env.NATIV_MAC_TOKEN || "",
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN || "*",

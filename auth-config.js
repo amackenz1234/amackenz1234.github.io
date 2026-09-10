@@ -1,6 +1,6 @@
-// Nativ Apple account SMS verification config.
+// appcompiler.ai Apple account SMS verification config.
 //
-// By default Nativ uses a built-in browser OTP so linking works on GitHub Pages
+// By default appcompiler.ai uses a built-in browser OTP so linking works on GitHub Pages
 // with no backend. For real carrier texts, deploy serverless/apple-sms.mjs and
 // set smsEndpoint to that worker URL (see serverless/README.md).
 window.NATIV_AUTH_CONFIG = {

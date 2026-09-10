@@ -1,4 +1,4 @@
-// Apple-account linking SMS verification for Nativ.
+// Apple-account linking SMS verification for appcompiler.ai.
 //
 // Deployable as a Cloudflare Worker (default export) — see serverless/README.md.
 // Helpers are exported for unit tests and reuse in other runtimes.
@@ -78,7 +78,7 @@ export async function verifyToken(code, token, secret, opts) {
 }
 
 export function buildSmsMessage(code) {
-  return "Your Nativ Apple verification code is " + code + ". It expires in 10 minutes.";
+  return "Your appcompiler.ai Apple verification code is " + code + ". It expires in 10 minutes.";
 }
 
 /** Build the JSON body for Telnyx or a generic HTTP SMS webhook. */

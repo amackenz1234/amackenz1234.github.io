@@ -26,5 +26,5 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log("Nativ Cloud Mac plan on http://127.0.0.1:" + port);
+  console.log("appcompiler.ai Cloud Mac plan on http://127.0.0.1:" + port);
 });

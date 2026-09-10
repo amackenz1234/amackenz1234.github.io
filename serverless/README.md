@@ -1,4 +1,4 @@
-# Faraday shop checkout + Nativ Cloud Mac plan
+# Faraday shop checkout + appcompiler.ai Cloud Mac plan
 
 GitHub Pages is static, so real (multi-item) purchases use a tiny serverless
 function that creates a [Stripe Checkout Session](https://stripe.com/docs/api/checkout/sessions)
@@ -47,12 +47,12 @@ with `Authorization: Bearer <STRIPE_SECRET_KEY>`, and return `{ url }`.
 
 ## Apple account SMS verification
 
-Nativ’s GitHub Pages site uses a **built-in browser OTP** by default
+The appcompiler.ai GitHub Pages site uses a **built-in browser OTP** by default
 (`sms-otp.js` + empty `smsEndpoint` in `auth-config.js`), so linking is
 always configured without a backend. For real carrier SMS, deploy the worker
 below and set `smsEndpoint`.
 
-Nativ can text a real 6-digit code to your phone when linking an Apple Developer
+appcompiler.ai can text a real 6-digit code to your phone when linking an Apple Developer
 account. The worker is [`apple-sms.mjs`](./apple-sms.mjs).
 
 **SMS is sent over a plain HTTP API — Twilio is not used.** The default provider
@@ -102,9 +102,9 @@ wrangler deploy
 Then set `smsEndpoint` in `auth-config.js` to the worker URL. Leave `phone` empty
 when `TRUSTED_PHONE` is configured on the server — the text always goes to your number.
 
-## Nativ Cloud Mac (Apple Silicon + Xcode)
+## appcompiler.ai Cloud Mac (Apple Silicon + Xcode)
 
-Nativ compiles on a **full cloud Mac** — a GitHub-hosted `xcode-27`
+appcompiler.ai compiles on a **full cloud Mac** — a GitHub-hosted `xcode-27`
 VM running the complete **macOS 27 RC** operating system with Xcode 27.
 You do not need a Mac on your desk.
 
@@ -149,10 +149,10 @@ cloud Mac. When these GitHub Actions secrets exist, it signs and exports a
 
 Without those secrets the job still uploads `Faraday-unsigned.ipa`.
 
-## Nativ Cloud Mac monthly plan
+## appcompiler.ai Cloud Mac monthly plan
 
 Signed IPA compiles are unlocked by a **$29/month** Stripe subscription
-(Product `Nativ Cloud Mac`, Price `price_1UDyrEAZ8aLPU3hFOHtMe7zm` on the
+(Product `appcompiler.ai Cloud Mac`, Price `price_1UDyrEAZ8aLPU3hFOHtMe7zm` on the
 test sandbox). The worker is [`nativ-plan.mjs`](./nativ-plan.mjs).
 
 Checkout uses `mode=subscription`. It does **not** send `payment_method_types`

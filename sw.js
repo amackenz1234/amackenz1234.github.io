@@ -1,4 +1,4 @@
-const CACHE = "nativ-v6";
+const CACHE = "appcompiler-v1";
 const ASSETS = [
   "./",
   "./index.html",

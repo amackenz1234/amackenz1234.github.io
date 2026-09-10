@@ -54,7 +54,7 @@ test("inspectHost describes a cloud Apple Silicon Mac with Xcode", () => {
   const host = inspectHost({
     cloud: true,
     mock: true,
-    name: "Nativ Cloud Mac",
+    name: "appcompiler.ai Cloud Mac",
     xcode: "Xcode 27",
     xcodeInstalled: true,
   });
@@ -146,7 +146,7 @@ test("dispatchCloudCompile posts to GitHub Actions", async () => {
 });
 
 test("handleHealth and handleCompile work without GitHub (demo cloud Mac)", async () => {
-  const env = { MOCK_MAC: "1", MAC_NAME: "Nativ Cloud Mac" };
+  const env = { MOCK_MAC: "1", MAC_NAME: "appcompiler.ai Cloud Mac" };
   const health = await handleHealth(env);
   assert.equal(health.ok, true);
   assert.equal(health.cloud, true);

@@ -38,7 +38,7 @@ The workflow:
 2. Archives for device.
 3. Packages a **signed** `.ipa` when Apple signing secrets are present
    (`IOS_CERTIFICATE_BASE64`, `IOS_CERTIFICATE_PASSWORD`,
-   `IOS_PROVISION_PROFILE_BASE64`, `IOS_TEAM_ID`). The monthly Nativ Cloud Mac
+   `IOS_PROVISION_PROFILE_BASE64`, `IOS_TEAM_ID`). The monthly appcompiler.ai Cloud Mac
    plan unlocks this path from the studio.
 4. Falls back to `Faraday-unsigned.ipa` when those secrets are missing, so CI
    still produces an inspectable package.

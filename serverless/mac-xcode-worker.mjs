@@ -1,4 +1,4 @@
-// Nativ Cloud Mac — Apple Silicon + Xcode, hosted in the cloud.
+// appcompiler.ai Cloud Mac — Apple Silicon + Xcode, hosted in the cloud.
 //
 // The GitHub Pages site talks to this function. It does not need a Mac
 // on your desk. Compiles are dispatched to a GitHub-hosted xcode-27
@@ -9,7 +9,7 @@
 //   NATIV_MAC_TOKEN   — optional shared secret (Authorization: Bearer …)
 //   ALLOW_ORIGIN      — CORS origin (default *)
 //   MOCK_MAC          — "1" for local/demo (no GitHub dispatch)
-//   MAC_NAME          — display name (default "Nativ Cloud Mac")
+//   MAC_NAME          — display name (default "appcompiler.ai Cloud Mac")
 //   XCODE_VERSION     — label shown in /health (default "Xcode 27")
 //   MAC_OS            — label shown in /health (default "Full macOS 27 RC")
 //   GITHUB_TOKEN      — PAT or Actions token with actions:write
@@ -18,7 +18,7 @@
 //   GITHUB_WORKFLOW   — workflow file (default ios.yml)
 //   GITHUB_REF        — git ref to run (default main)
 
-const DEFAULT_NAME = "Nativ Cloud Mac";
+const DEFAULT_NAME = "appcompiler.ai Cloud Mac";
 const DEFAULT_XCODE = "Xcode 27";
 const DEFAULT_OS = "Full macOS 27 RC";
 const DEFAULT_PROVIDER = "GitHub-hosted xcode-27 (full macOS 27 RC, Apple Silicon)";
@@ -172,7 +172,7 @@ export function mockCompileLogs(appName, files, opts) {
   opts = opts || {};
   const names = Object.keys(files || {}).filter((f) => /\.swift$/.test(f));
   const logs = [
-    "Booting full macOS 27 RC on Nativ Cloud Mac (Apple Silicon, arm64)…",
+    "Booting full macOS 27 RC on appcompiler.ai Cloud Mac (Apple Silicon, arm64)…",
     "launchd (pid 1) · Darwin kernel · system domain live",
     "Full macOS 27 RC is running",
     "Xcode 27 selected · iPhoneSimulator 27.0 SDK",
