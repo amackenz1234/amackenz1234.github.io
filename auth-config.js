@@ -1,11 +1,17 @@
 // Nativ Apple account SMS verification config.
 //
-// Real texts require the serverless function in ./serverless/apple-sms.mjs
-// (see serverless/README.md). Set smsEndpoint to that function's public URL.
-// Optionally set `phone` (E.164 or 10-digit) so codes go to your number automatically.
+// By default Nativ uses a built-in browser OTP so linking works on GitHub Pages
+// with no backend. For real carrier texts, deploy serverless/apple-sms.mjs and
+// set smsEndpoint to that worker URL (see serverless/README.md).
 window.NATIV_AUTH_CONFIG = {
-  // Local mock: "http://127.0.0.1:8787"
-  // Deployed:  "https://nativ-apple-sms.<you>.workers.dev"
+  // "" = built-in OTP (always configured on static hosting)
+  // Deployed worker, e.g. "https://nativ-apple-sms.<you>.workers.dev"
   smsEndpoint: "",
-  phone: ""
+
+  // Optional default destination (E.164 or 10-digit). Leave empty to ask in the sheet.
+  phone: "",
+
+  // When using built-in OTP (no smsEndpoint), show the code once in the 2FA sheet
+  // so verification can complete without a carrier SMS provider.
+  previewSms: true
 };
