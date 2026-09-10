@@ -37,6 +37,14 @@
   function subtotal() { return lines().reduce(function (s, l) { return s + l.p.price * l.qty; }, 0); }
   function tax() { return subtotal() * HST_RATE; }
   function total() { return subtotal() + tax(); }
+  function installments() {
+    var cents = Math.round(total() * 100);
+    var base = Math.floor(cents / 4);
+    var rem = cents - base * 4;
+    var out = [];
+    for (var i = 0; i < 4; i++) out.push((base + (i < rem ? 1 : 0)) / 100);
+    return out;
+  }
 
   var ui = { open: false, view: "cart", method: "card", processing: false, order: null, error: "" };
 
@@ -185,7 +193,7 @@
           '<div><span>Subtotal</span><span>' + money(subtotal()) + "</span></div>" +
           '<div><span>HST (13%)</span><span>' + money(tax()) + "</span></div>" +
           '<div class="ecp-grand"><span>Total</span><span>' + money(total()) + "</span></div>" +
-          '<div class="ecp-klarna-hint">or 4 interest-free payments of ' + money(total() / 4) + ' with <span class="ecp-klarna-badge">Klarna</span></div>' +
+          '<div class="ecp-klarna-hint">or 4 interest-free payments of ' + money(installments()[0]) + ' with <span class="ecp-klarna-badge">Klarna</span></div>' +
         "</div>" +
         '<button type="button" class="ecp-btn" data-ecp="to-checkout">Proceed to checkout</button>';
     }
@@ -237,11 +245,11 @@
 
     var body, payLabel, payClass;
     if (ui.method === "klarna") {
-      var q = total() / 4;
+      var inst = installments();
       body =
-        '<p class="ecp-note">4 interest-free payments of <strong>' + money(q) + "</strong>, billed every 2 weeks. 0% interest.</p>" +
+        '<p class="ecp-note">4 interest-free payments of <strong>' + money(inst[0]) + "</strong>, billed every 2 weeks. 0% interest.</p>" +
         '<div class="ecp-plan">' +
-          planRow("Today", q) + planRow("In 2 weeks", q) + planRow("In 4 weeks", q) + planRow("In 6 weeks", q) +
+          planRow("Today", inst[0]) + planRow("In 2 weeks", inst[1]) + planRow("In 4 weeks", inst[2]) + planRow("In 6 weeks", inst[3]) +
         "</div>" +
         '<div class="ecp-field"><label for="ecp-email">Email</label><input id="ecp-email" type="email" placeholder="you@example.com" autocomplete="email"></div>' +
         '<p class="ecp-note">Demo mode — no real charge. Klarna approval is simulated.</p>';
