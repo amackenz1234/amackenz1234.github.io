@@ -75,7 +75,19 @@
     pendingSubmitAfterLink: false,
     bundleId: "",
     toast: null,
-    toastTimer: null
+    toastTimer: null,
+    macOpen: false,
+    macBusy: false,
+    macInfo: {
+      connected: true,
+      cloud: true,
+      silicon: true,
+      arch: "arm64",
+      name: "Nativ Cloud Mac",
+      provider: "GitHub-hosted xcode-27 (macOS 27 RC, Apple Silicon)",
+      os: "macOS 27 RC",
+      xcode: "Xcode 27"
+    }
   };
 
   function persistAccount() {
@@ -506,6 +518,9 @@
           '<button type="button" class="account-chip' + (state.accountLinked ? " linked" : "") + '" data-action="link-account">' +
             '<span class="dot" aria-hidden="true"></span>' + esc(accountLabel()) +
           "</button>" +
+          '<button type="button" class="account-chip linked" data-action="open-mac">' +
+            '<span class="dot" aria-hidden="true"></span>' + esc(macLabel()) +
+          "</button>" +
           '<button type="button" class="btn" data-action="open-studio">Open compiler</button>' +
         "</div>" +
       "</div></header>" +
@@ -533,7 +548,7 @@
         "<h2>Native Swift. Real Xcode.</h2>" +
         '<p class="lede">Not a web wrapper. Nativ generates SwiftUI, runs the Apple toolchain in the cloud, and keeps your project exportable.</p>' +
         '<div class="feature-list">' +
-          "<article class=\"feature\"><h3>Cloud Xcode compiler</h3><p>Build, archive, and validate with a browser-based Xcode workflow — no Mac required to start.</p></article>" +
+          "<article class=\"feature\"><h3>Cloud Apple Silicon Mac</h3><p>Compile on a hosted arm64 Mac running macOS 27 RC with Xcode 27 — no Mac on your desk.</p></article>" +
           "<article class=\"feature\"><h3>SwiftUI you own</h3><p>Read every file, tweak the project, export the full Xcode package whenever you want.</p></article>" +
           "<article class=\"feature\"><h3>App Store Connect</h3><p>Link your Apple Developer account, then submit builds, metadata, and privacy details in two clicks.</p></article>" +
         "</div>" +
@@ -548,7 +563,7 @@
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
         "</div>" +
       "</div></section>" +
-      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Demo compiler · Not affiliated with Apple</span></footer>' +
+      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Cloud Apple Silicon Mac · Not affiliated with Apple</span></footer>' +
       (state.opening
         ? '<div class="opening-overlay"><div class="spinner" aria-hidden="true"></div><p>Generating SwiftUI project…</p></div>'
         : "")
@@ -581,12 +596,16 @@
             "<strong>" + esc(state.appName) + ".xcodeproj</strong>" +
             (state.built ? '<span class="badge">Build succeeded</span>' : "") +
             (state.accountLinked ? '<span class="badge">ASC linked</span>' : "") +
+            '<span class="badge">Cloud Mac · macOS 27 RC</span>' +
           "</div>" +
           '<div class="studio-actions">' +
             '<button type="button" class="btn btn-ghost" data-action="home">← Home</button>' +
             '<button type="button" class="btn btn-ghost" data-action="export">Export</button>' +
             '<button type="button" class="account-chip' + (state.accountLinked ? " linked" : "") + '" data-action="link-account">' +
               '<span class="dot" aria-hidden="true"></span>' + esc(accountLabel()) +
+            "</button>" +
+            '<button type="button" class="account-chip linked" data-action="open-mac">' +
+              '<span class="dot" aria-hidden="true"></span>' + esc(macLabel()) +
             "</button>" +
             '<button type="button" class="btn btn-ghost" data-action="compile"' + (state.building ? " disabled" : "") + ">" + buildLabel + "</button>" +
             '<button type="button" class="btn btn-amber" data-action="submit">Submit to App Store Connect</button>' +
@@ -607,7 +626,7 @@
           "</section>" +
           '<section class="pane preview-pane">' +
             '<div>' +
-              '<div class="pane-head"><span>Simulator</span><span>iPhone 16</span></div>' +
+              '<div class="pane-head"><span>Simulator</span><span>iPhone 17</span></div>' +
               '<div class="device-frame"><div class="device"><div class="device-inner ' + theme + '">' +
                 "<h4>" + esc(state.appName) + "</h4>" +
                 "<p>" + esc((state.prompt || "Your generated SwiftUI app").slice(0, 110)) + "</p>" +
@@ -615,7 +634,7 @@
               "</div></div></div>" +
             "</div>" +
             '<div class="console" id="console">' +
-              '<div class="dim">Nativ Cloud Xcode · xcodebuild</div>' +
+              '<div class="dim">Nativ Cloud Mac · macOS 27 RC · ' + esc((state.macInfo && state.macInfo.xcode) || "Xcode 27") + '</div>' +
               logs +
             "</div>" +
           "</section>" +
@@ -822,6 +841,92 @@
       var el = document.querySelector(".toast");
       if (el) el.remove();
     }, ms || 2200);
+  }
+
+  function macConfig() {
+    return (typeof window !== "undefined" && window.NATIV_MAC_CONFIG) || {};
+  }
+
+  function macEndpoint() {
+    var cfg = macConfig();
+    return (cfg.compileEndpoint || "").replace(/\/$/, "");
+  }
+
+  function macLabel() {
+    var info = state.macInfo || {};
+    if (info.os) return "Cloud Mac · macOS 27 RC";
+    if (info.xcode) return "Cloud Mac · Xcode 27";
+    return "Cloud Mac";
+  }
+
+  function renderMacModal() {
+    if (!state.macOpen) return "";
+    var info = state.macInfo || {};
+    var endpoint = macEndpoint();
+    return (
+      '<div class="modal" id="mac-modal">' +
+        '<div class="sheet wide" role="dialog" aria-labelledby="mac-title">' +
+          '<h2 id="mac-title">Nativ Cloud Mac</h2>' +
+          "<p>Compiles run on a hosted Apple Silicon Mac running macOS 27 RC with Xcode 27. You do not need a Mac on your desk.</p>" +
+          '<div class="account-card">' +
+            '<div class="label">Cloud compiler</div>' +
+            '<div class="name">' + esc(info.name || "Nativ Cloud Mac") + "</div>" +
+            '<div class="meta">' +
+              esc(info.provider || "GitHub-hosted xcode-27") +
+              "<br>OS · " + esc(info.os || "macOS 27 RC") +
+              "<br>Architecture · " + esc(info.arch || "arm64") +
+              "<br>" + esc(info.xcode || "Xcode 27 required") +
+              (endpoint ? "<br>Dispatcher · " + esc(endpoint) : "<br>Built-in cloud console") +
+            "</div>" +
+          "</div>" +
+          '<p class="hint">The GitHub-hosted xcode-27 image is Apple Silicon on macOS 27 RC. The workflow fails if macOS 27 or Xcode 27 is missing.</p>' +
+          '<div class="sheet-actions">' +
+            '<button type="button" class="btn" data-action="close-mac"' + (state.macBusy ? " disabled" : "") + ">Done</button>" +
+          "</div>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+
+  function openMacModal() {
+    state.macOpen = true;
+    render();
+    refreshCloudMac();
+  }
+
+  function closeMacModal() {
+    state.macOpen = false;
+    render();
+  }
+
+  function refreshCloudMac() {
+    var endpoint = macEndpoint();
+    if (!endpoint) return;
+    state.macBusy = true;
+    var headers = { Accept: "application/json" };
+    var token = macConfig().token;
+    if (token) headers.Authorization = "Bearer " + token;
+    fetch(endpoint + "/health", { headers: headers })
+      .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+      .then(function (out) {
+        state.macBusy = false;
+        if (out.body && out.body.ok) {
+          state.macInfo = {
+            connected: true,
+            cloud: true,
+            silicon: true,
+            arch: out.body.arch || "arm64",
+            name: out.body.name || "Nativ Cloud Mac",
+            provider: out.body.provider || state.macInfo.provider,
+            os: out.body.os || "macOS 27 RC",
+            xcode: out.body.xcode || "Xcode 27"
+          };
+        }
+        if (state.macOpen) render();
+      })
+      .catch(function () {
+        state.macBusy = false;
+      });
   }
 
   function authConfig() {
@@ -1039,6 +1144,7 @@
     html += renderLinkModal();
     html += renderAppleAuthModal();
     html += renderSubmitModal();
+    html += renderMacModal();
     html += renderToast();
     root.innerHTML = html;
     var consoleEl = document.getElementById("console");
@@ -1126,8 +1232,16 @@
       compileBtn.textContent = "Compiling…";
     }
 
-    pushLog("info", "$ xcodebuild -scheme " + state.appName + " -destination 'platform=iOS Simulator,name=iPhone 16'");
-    pushLog("dim", "Compiling Swift module " + state.appName + "…");
+    var endpoint = macEndpoint();
+    if (endpoint) {
+      runCloudCompile(endpoint);
+      return;
+    }
+
+    pushLog("info", "Provisioning Nativ Cloud Mac (macOS 27 RC, Apple Silicon, arm64)…");
+    pushLog("dim", (state.macInfo.xcode || "Xcode 27") + " selected · iPhoneSimulator 27.0 SDK");
+    pushLog("info", "$ xcodebuild -scheme " + state.appName + " -destination 'platform=iOS Simulator,name=iPhone 17'");
+    pushLog("dim", "Compiling Swift module " + state.appName + " on cloud Apple Silicon…");
 
     var fileNames = Object.keys(state.files).filter(function (f) { return /\.swift$/.test(f); });
     var phases = fileNames.map(function (f, i) {
@@ -1138,7 +1252,7 @@
       phases.push({ delay: 450 + fileNames.length * 380 + 520, cls: "info", msg: "Signing with team " + state.teamId });
     }
     phases.push({ delay: 450 + fileNames.length * 380 + 780, cls: "ok", msg: "** BUILD SUCCEEDED **" });
-    phases.push({ delay: 450 + fileNames.length * 380 + 980, cls: "info", msg: "Installed on iPhone 16 Simulator" });
+    phases.push({ delay: 450 + fileNames.length * 380 + 980, cls: "info", msg: "Installed on iPhone 17 Simulator" });
 
     if (state.compileTimer) {
       state.compileTimer.forEach(function (id) { clearTimeout(id); });
@@ -1155,6 +1269,52 @@
       }, p.delay);
       state.compileTimer.push(id);
     });
+  }
+
+  function finishCompile(ok) {
+    state.building = false;
+    state.built = !!ok;
+    render();
+  }
+
+  function runCloudCompile(endpoint) {
+    var headers = { "Content-Type": "application/json", Accept: "application/json" };
+    var token = macConfig().token;
+    if (token) headers.Authorization = "Bearer " + token;
+    pushLog("info", "Dispatching compile to Nativ Cloud Mac…");
+    fetch(endpoint + "/compile", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        appName: state.appName,
+        project: state.template === "electro" ? "electro" : "",
+        files: state.files
+      })
+    })
+      .then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+      .then(function (out) {
+        var logs = (out.body && out.body.logs) || [];
+        logs.forEach(function (line) {
+          var cls = "dim";
+          if (String(line).indexOf("BUILD SUCCEEDED") !== -1) cls = "ok";
+          else if (String(line).indexOf("QUEUED") !== -1 || String(line).indexOf("xcodebuild") !== -1) cls = "info";
+          else if (String(line).indexOf("error") !== -1) cls = "err";
+          pushLog(cls, line);
+        });
+        if (!out.ok || (out.body && out.body.ok === false)) {
+          pushLog("err", (out.body && out.body.error) || "Cloud Mac compile failed");
+          finishCompile(false);
+          return;
+        }
+        if (logs.join("\n").indexOf("BUILD SUCCEEDED") === -1) {
+          pushLog("ok", "** BUILD SUCCEEDED **");
+        }
+        finishCompile(true);
+      })
+      .catch(function (err) {
+        pushLog("err", "Cloud Mac unreachable: " + (err && err.message ? err.message : "network error"));
+        finishCompile(false);
+      });
   }
 
   var UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -1422,6 +1582,8 @@
       state.opening = false;
       render();
     } else if (action === "compile") runCompile();
+    else if (action === "open-mac") openMacModal();
+    else if (action === "close-mac") closeMacModal();
     else if (action === "submit") openSubmitModal();
     else if (action === "export") exportZip();
     else if (action === "close-link") closeLinkModal();
@@ -1468,4 +1630,5 @@
   root.addEventListener("input", onAppInput);
   root.addEventListener("change", onAppChange);
   render();
+  refreshCloudMac();
 })();

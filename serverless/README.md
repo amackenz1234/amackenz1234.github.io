@@ -89,3 +89,32 @@ wrangler deploy
 
 Then set `smsEndpoint` in `auth-config.js` to the worker URL. Leave `phone` empty
 when `TRUSTED_PHONE` is configured on the server — the text always goes to your number.
+
+## Nativ Cloud Mac (Apple Silicon + Xcode)
+
+Nativ compiles on a **cloud** Apple Silicon Mac — a GitHub-hosted `xcode-27`
+runner on **macOS 27 RC** with Xcode 27. You do not need a Mac on your desk.
+
+The workflow [`.github/workflows/ios.yml`](../.github/workflows/ios.yml) selects
+Xcode, then runs [`scripts/require-cloud-xcode.sh`](../scripts/require-cloud-xcode.sh)
+and fails the job if the runner is not arm64, not macOS 27, or missing Xcode 27.
+
+### Optional dispatcher (real Actions job from the browser)
+
+The site can POST to [`mac-xcode-worker.mjs`](./mac-xcode-worker.mjs), which
+dispatches that workflow.
+
+Secrets:
+
+- `GITHUB_TOKEN` — PAT with `actions:write` on this repo
+- `GITHUB_OWNER`, `GITHUB_REPO` — e.g. `amackenz1234` / `amackenz1234.github.io`
+- Optional: `NATIV_MAC_TOKEN`, `GITHUB_WORKFLOW=ios.yml`, `GITHUB_REF=main`
+
+Local demo (no GitHub call):
+
+```bash
+MOCK_MAC=1 node serverless/mac-xcode-local.mjs
+```
+
+Point [`../mac-config.js`](../mac-config.js) at `http://127.0.0.1:8788`.
+Without an endpoint, the studio still uses the built-in Cloud Mac console.
