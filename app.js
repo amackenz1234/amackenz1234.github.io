@@ -18,11 +18,6 @@
     mutating: 1, inout: 1, init: 1, associatedtype: 1, default: 1
   };
 
-  var TEAMS = [
-    { id: "A1B2C3D4E5", name: "Personal Team", role: "Account Holder" },
-    { id: "X9Y8Z7W6V5", name: "Nativ Demo LLC", role: "Admin" }
-  ];
-
   var savedAccount = null;
   try {
     savedAccount = JSON.parse(localStorage.getItem("nativ.appleAccount") || "null");
@@ -637,11 +632,6 @@
       );
     }
 
-    var teamOptions = TEAMS.map(function (t) {
-      var selected = state.teamId === t.id ? " selected" : "";
-      return '<option value="' + esc(t.id) + '"' + selected + ">" + esc(t.name + " · " + t.id) + "</option>";
-    }).join("");
-
     var signinFields;
     if (state.linkStep === 1) {
       signinFields =
@@ -654,11 +644,9 @@
           '<input id="apple-id" type="email" autocomplete="username" placeholder="you@icloud.com" value="' + esc(state.appleId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
         '<div class="field"><label for="apple-password">Password</label>' +
           '<input id="apple-password" type="password" autocomplete="current-password" placeholder="Apple ID password" value="' + esc(state.password) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
-        '<div class="field"><label for="team-select">Developer team</label>' +
-          '<select id="team-select"' + (state.linking ? " disabled" : "") + ">" +
-            '<option value="">Select a team…</option>' + teamOptions +
-          "</select></div>" +
-        '<p class="hint">Sign in with your Apple ID. A verification code will be sent to your trusted Apple devices.</p>';
+        '<div class="field"><label for="signin-team-id">App Store Connect Team ID</label>' +
+          '<input id="signin-team-id" placeholder="ABCDE12345" value="' + esc(state.teamId) + '"' + (state.linking ? " disabled" : "") + " /></div>" +
+        '<p class="hint">Find your 10-character Team ID in App Store Connect under Membership. A verification code will be sent to your trusted Apple devices.</p>';
     }
 
     var apiFields =
@@ -948,8 +936,7 @@
           showToast("Enter the 6-digit verification code.");
           return;
         }
-        var vteam = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
-        state.teamName = vteam ? vteam.name : "Developer Team";
+        state.teamName = "Team " + state.teamId;
         state.issuerId = "";
         state.keyId = "";
         finishLink();
@@ -958,7 +945,7 @@
 
       var appleIdEl = document.getElementById("apple-id");
       var passEl = document.getElementById("apple-password");
-      var teamEl = document.getElementById("team-select");
+      var teamEl = document.getElementById("signin-team-id");
       state.appleId = ((appleIdEl && appleIdEl.value) || state.appleId || "").trim();
       state.password = (passEl && passEl.value) || state.password || "";
       state.teamId = ((teamEl && teamEl.value) || state.teamId || "").trim();
@@ -970,8 +957,8 @@
         showToast("Enter your Apple ID password.");
         return;
       }
-      if (!state.teamId) {
-        showToast("Select a developer team.");
+      if (!/^[0-9A-Za-z]{10}$/.test(state.teamId)) {
+        showToast("Enter your 10-character App Store Connect Team ID.");
         return;
       }
       // Authenticate credentials, then request a 2FA code on the user's devices.
@@ -1242,6 +1229,7 @@
     } else if (id === "apple-id") state.appleId = e.target.value;
     else if (id === "apple-password") state.password = e.target.value;
     else if (id === "apple-otp") state.otp = e.target.value;
+    else if (id === "signin-team-id") state.teamId = e.target.value;
     else if (id === "issuer-id") state.issuerId = e.target.value;
     else if (id === "key-id") state.keyId = e.target.value;
     else if (id === "api-team-id") state.teamId = e.target.value;
@@ -1249,17 +1237,8 @@
     else if (id === "bundle-id") state.bundleId = e.target.value;
   }
 
-  function onAppChange(e) {
-    if (e.target.id === "team-select") {
-      state.teamId = e.target.value;
-      var team = TEAMS.filter(function (t) { return t.id === state.teamId; })[0];
-      state.teamName = team ? team.name : state.teamName;
-    }
-  }
-
   var root = document.getElementById("app");
   root.addEventListener("click", onAppClick);
   root.addEventListener("input", onAppInput);
-  root.addEventListener("change", onAppChange);
   render();
 })();
