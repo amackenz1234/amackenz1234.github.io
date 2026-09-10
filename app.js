@@ -565,7 +565,7 @@
           '<button type="button" class="btn btn-amber" data-action="publish">Submit to App Store Connect</button>' +
         "</div>" +
       "</div></section>" +
-      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Cloud Apple Silicon Mac · Not affiliated with Apple</span></footer>' +
+      '<footer class="wrap site-footer"><span>Nativ · Native iOS with AI</span><span><a href="./shop/">Electro Cycles sample shop</a> · Full Cloud Mac · macOS 27 RC · Not affiliated with Apple</span></footer>' +
       (state.opening
         ? '<div class="opening-overlay"><div class="spinner" aria-hidden="true"></div><p>Generating SwiftUI project…</p></div>'
         : "")
