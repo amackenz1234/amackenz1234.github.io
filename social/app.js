@@ -354,15 +354,6 @@
     render();
   }
 
-  function markNotificationsRead() {
-    var me = currentUser();
-    if (!me) return;
-    db.notifications.forEach(function (n) {
-      if (n.userId === me.id) n.read = true;
-    });
-    save();
-  }
-
   function ensureChat(otherId) {
     var me = currentUser();
     var existing = db.messages.find(function (t) {
