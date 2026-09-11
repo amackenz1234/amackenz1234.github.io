@@ -1,5 +1,5 @@
-/* Kin seed data — demo users, posts, and conversations */
-window.KIN_SEED = (function () {
+/* SocialFace seed data — demo users, posts, and conversations */
+window.SOCIALFACE_SEED = (function () {
   "use strict";
 
   var now = Date.now();
@@ -11,7 +11,7 @@ window.KIN_SEED = (function () {
       id: "u_maya",
       name: "Maya Chen",
       handle: "maya",
-      email: "maya@kin.demo",
+      email: "maya@socialface.demo",
       password: "demo1234",
       bio: "Product designer. Coffee before pixels.",
       location: "Portland, OR",
@@ -24,7 +24,7 @@ window.KIN_SEED = (function () {
       id: "u_jordan",
       name: "Jordan Blake",
       handle: "jordan",
-      email: "jordan@kin.demo",
+      email: "jordan@socialface.demo",
       password: "demo1234",
       bio: "Trail runner · weekend photographer",
       location: "Denver, CO",
@@ -37,7 +37,7 @@ window.KIN_SEED = (function () {
       id: "u_sam",
       name: "Sam Okonkwo",
       handle: "sam",
-      email: "sam@kin.demo",
+      email: "sam@socialface.demo",
       password: "demo1234",
       bio: "Building things that feel human.",
       location: "Austin, TX",
@@ -50,7 +50,7 @@ window.KIN_SEED = (function () {
       id: "u_riley",
       name: "Riley Park",
       handle: "riley",
-      email: "riley@kin.demo",
+      email: "riley@socialface.demo",
       password: "demo1234",
       bio: "Music, markets, morning light.",
       location: "Brooklyn, NY",
@@ -63,7 +63,7 @@ window.KIN_SEED = (function () {
       id: "u_alex",
       name: "Alex Rivera",
       handle: "alex",
-      email: "alex@kin.demo",
+      email: "alex@socialface.demo",
       password: "demo1234",
       bio: "Chef by night, gardener by day.",
       location: "Oakland, CA",
@@ -187,7 +187,7 @@ window.KIN_SEED = (function () {
     stories: stories,
     messages: messages,
     notifications: notifications,
-    demoEmail: "maya@kin.demo",
+    demoEmail: "maya@socialface.demo",
     demoPassword: "demo1234"
   };
 })();
