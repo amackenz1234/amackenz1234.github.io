@@ -1,8 +1,8 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "kin.social.v1";
-  var seed = window.KIN_SEED;
+  var STORAGE_KEY = "socialface.v1";
+  var seed = window.SOCIALFACE_SEED;
 
   function clone(obj) {
     return JSON.parse(JSON.stringify(obj));
@@ -139,7 +139,7 @@
       return u.email.toLowerCase() === email.toLowerCase() && u.password === password;
     });
     if (!user) {
-      state.authError = "Those credentials don’t match a Kin account.";
+      state.authError = "Those credentials don’t match a SocialFace account.";
       render();
       return;
     }
@@ -152,7 +152,7 @@
 
   function signup(name, handle, email, password) {
     if (!name || !handle || !email || !password) {
-      state.authError = "Fill in every field to join Kin.";
+      state.authError = "Fill in every field to join SocialFace.";
       render();
       return;
     }
@@ -168,7 +168,7 @@
       return;
     }
     if (db.users.some(function (u) { return u.email.toLowerCase() === email.toLowerCase(); })) {
-      state.authError = "That email is already on Kin.";
+      state.authError = "That email is already on SocialFace.";
       render();
       return;
     }
@@ -179,14 +179,14 @@
     }
     var colors = ["#1a9b8e", "#e07a3d", "#4d7cff", "#c45d8c", "#6a9a3a", "#f0c75e"];
     var parts = name.trim().split(/\s+/);
-    var initials = (parts[0][0] || "K") + (parts[1] ? parts[1][0] : (parts[0][1] || "N"));
+    var initials = (parts[0][0] || "S") + (parts[1] ? parts[1][0] : (parts[0][1] || "F"));
     var user = {
       id: uid("u"),
       name: name.trim(),
       handle: cleanHandle,
       email: email.trim(),
       password: password,
-      bio: "New on Kin.",
+      bio: "New on SocialFace.",
       location: "",
       avatar: initials.toUpperCase(),
       color: colors[db.users.length % colors.length],
@@ -202,7 +202,7 @@
     save();
     state.view = "feed";
     state.authError = "";
-    toast("You’re in. Start sharing with Kin.");
+    toast("You’re in. Start sharing with SocialFace.");
   }
 
   function logout() {
@@ -400,13 +400,13 @@
     return (
       '<div class="auth-shell">' +
         '<section class="auth-hero">' +
-          '<div class="brand-mark"><span class="dot">K</span> Kin</div>' +
+          '<div class="brand-mark"><span class="dot">S</span> SocialFace</div>' +
           "<h1>Stay close to your people</h1>" +
           "<p>Share moments, cheer friends on, and keep the good conversations going — without the noise.</p>" +
         "</section>" +
         '<section class="auth-panel">' +
           '<div class="auth-card">' +
-            "<h2>" + (isLogin ? "Welcome back" : "Join Kin") + "</h2>" +
+            "<h2>" + (isLogin ? "Welcome back" : "Join SocialFace") + "</h2>" +
             '<p class="sub">' + (isLogin ? "Log in to pick up your feed." : "Create an account in under a minute.") + "</p>" +
             (state.authError ? '<p class="form-error">' + esc(state.authError) + "</p>" : "") +
             '<form id="auth-form">' +
@@ -424,7 +424,7 @@
             '<p class="auth-switch">' +
               (isLogin
                 ? 'New here? <button type="button" data-action="switch-auth" data-mode="signup">Create an account</button>'
-                : 'Already on Kin? <button type="button" data-action="switch-auth" data-mode="login">Log in</button>') +
+                : 'Already on SocialFace? <button type="button" data-action="switch-auth" data-mode="login">Log in</button>') +
             "</p>" +
             '<div class="demo-hint">Demo account: <strong>' + esc(seed.demoEmail) + "</strong> / <strong>" +
               esc(seed.demoPassword) + "</strong></div>" +
@@ -458,7 +458,7 @@
     ];
     return (
       '<aside class="side-nav">' +
-        '<div class="brand-mark" style="margin:0.25rem 0.35rem 0.85rem"><span class="dot">K</span> Kin</div>' +
+        '<div class="brand-mark" style="margin:0.25rem 0.35rem 0.85rem"><span class="dot">S</span> SocialFace</div>' +
         '<div class="nav-user">' +
           avatarHtml(me) +
           "<div><strong>" + esc(me.name) + '</strong><span>@' + esc(me.handle) + "</span></div>" +
@@ -507,7 +507,7 @@
       '<div class="topbar">' +
         '<div class="search-box">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
-          '<input type="search" placeholder="Search people on Kin" value="' + esc(state.search) + '" data-bind="search" />' +
+          '<input type="search" placeholder="Search people on SocialFace" value="' + esc(state.search) + '" data-bind="search" />' +
         "</div>" +
         '<button class="btn btn-ghost" data-action="nav" data-view="friends">Find friends</button>' +
       "</div>"
@@ -1085,7 +1085,7 @@
   }
 
   // Expose reset for testing
-  window.KinApp = {
+  window.SocialFaceApp = {
     reset: function () {
       localStorage.removeItem(STORAGE_KEY);
       db = loadStore();
