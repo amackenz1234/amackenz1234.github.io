@@ -1,6 +1,7 @@
-name: iOS Upload to App Store Connect
+name: iOS Upload to TestFlight
 
-# Manual only — uploading submits a real build to your App Store Connect.
+# Manual only — this signs Faraday for the App Store and uploads it to
+# App Store Connect, where it becomes available in TestFlight after processing.
 on:
   workflow_dispatch:
     inputs:
@@ -9,92 +10,66 @@ on:
         required: false
         default: ""
 
+concurrency:
+  group: ios-testflight-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  upload:
-    name: Archive & upload (App Store Connect)
-    runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ios/ElectroCycles
-    env:
-      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-      ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+  testflight:
+    name: Build, sign & upload to TestFlight
+    runs-on: xcode-27
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: "27"
+
+      - name: Run full macOS 27 RC
+        run: bash scripts/run-full-macos.sh
+
       - name: Verify required secrets are present
+        env:
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
         run: |
           missing=0
-          for v in ASC_KEY_ID ASC_ISSUER_ID ASC_API_KEY_P8 APPLE_TEAM_ID; do
+          for v in IOS_CERTIFICATE_BASE64 IOS_CERTIFICATE_PASSWORD IOS_PROVISION_PROFILE_BASE64 IOS_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_API_KEY_P8; do
             if [ -z "${!v}" ]; then echo "::error::Missing secret $v"; missing=1; fi
           done
           if [ "$missing" != "0" ]; then
-            echo "Add them in Settings → Secrets and variables → Actions (repository secrets)."
+            echo "Add them in Settings → Secrets and variables → Actions (repository secrets). See ios/Faraday/RELEASE.md."
             exit 1
           fi
 
-      - name: Show toolchain
-        run: xcodebuild -version
-
-      - name: Install App Store Connect API key
-        run: |
-          mkdir -p ~/private_keys
-          printf '%s' "$ASC_API_KEY_P8" > ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
-          chmod 600 ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
-
       - name: Set build number
         if: ${{ github.event.inputs.build_number != '' }}
-        run: |
-          agvtool new-version -all "${{ github.event.inputs.build_number }}"
+        working-directory: ios/Faraday
+        run: agvtool new-version -all "${{ github.event.inputs.build_number }}"
 
-      - name: Archive (App Store, automatic cloud signing)
-        run: |
-          set -o pipefail
-          xcodebuild \
-            -project ElectroCycles.xcodeproj \
-            -scheme ElectroCycles \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -archivePath "$RUNNER_TEMP/ElectroCycles.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8 \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            clean archive
+      - name: Build & sign App Store IPA
+        env:
+          APP_NAME: Faraday
+          WANT_SIGNED: "true"
+          EXPORT_METHOD: app-store
+          IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_PROVISION_PROFILE_BASE64 }}
+          IOS_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+          IOS_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_ID }}
+          IOS_CODE_SIGN_IDENTITY: ${{ secrets.IOS_CODE_SIGN_IDENTITY }}
+        run: bash scripts/package-ipa.sh
 
-      - name: Write ExportOptions.plist
-        run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
-            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
-            <key>signingStyle</key><string>automatic</string>
-            <key>uploadSymbols</key><true/>
-          </dict>
-          </plist>
-          PLIST
-
-      - name: Export archive and upload to App Store Connect
-        run: |
-          set -o pipefail
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/ElectroCycles.xcarchive" \
-            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -exportPath "$RUNNER_TEMP/export" \
-            -allowProvisioningUpdates \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-            -authenticationKeyPath ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
-
-      - name: Clean up API key
-        if: always()
-        run: rm -f ~/private_keys/AuthKey_${ASC_KEY_ID}.p8
+      - name: Upload to App Store Connect (TestFlight)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_API_KEY_P8: ${{ secrets.ASC_API_KEY_P8 }}
+        run: bash scripts/upload-testflight.sh
